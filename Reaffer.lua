@@ -25,7 +25,7 @@ local App =
 	cb_signature_w = 76,
 	cb_quantize_w = 58,
 	si_measures_w = 140,
-	arrange_h = 200,
+	arrange_h = 160,
 	grid_w = 34,
 	-- defaults
 	num_grid_divisions,
@@ -39,12 +39,12 @@ local App =
 	{
 		-- num_strings, open string note number, strings in reverse order (high to low)
 		[0] = 
-		{[0] = 4, 25, "G2", "D2", "A1", "E1"},
-		{[0] = 5, 26, "G2", "D2", "A1", "E1", "B0"},
-		{[0] = 6, 25, "E4", "B3", "G3", "D3", "A2", "E2"},
-		{[0] = 7, 25, "E4", "B3", "G3", "D3", "A2", "E2", "B1"},
-		{[0] = 8, 25, "E4", "B3", "G3", "D3", "A2", "E2", "B1", "F#1"},
-		{[0] = 9, 25, "E4", "B3", "G3", "D3", "A2", "E2", "B1", "F#1", "C#1"}
+		{[0] = 4, 25, "G2 ", "D2 ", "A1 ", "E1 "},
+		{[0] = 5, 26, "G2 ", "D2 ", "A1 ", "E1 ", "B0 "},
+		{[0] = 6, 25, "E4 ", "B3 ", "G3 ", "D3 ", "A2 ", "E2 "},
+		{[0] = 7, 25, "E4 ", "B3 ", "G3 ", "D3 ", "A2 ", "E2 ", "B1 "},
+		{[0] = 8, 25, "E4 ", "B3 ", "G3 ", "D3 ", "A2 ", "E2 ", "B1 ", "F#1"},
+		{[0] = 9, 25, "E4 ", "B3 ", "G3 ", "D3 ", "A2 ", "E2 ", "B1 ", "F#1", "C#1"}
 	}
 }
 
@@ -146,51 +146,73 @@ function UI.DrawTXT_Help()
 		reaper.ImGui_BeginTooltip(App.ctx)
 		reaper.ImGui_Text(App.ctx,
 		"Help text,\n" ..
-		"This is a comment")
+		"This is a comment yep")
 		reaper.ImGui_EndTooltip(App.ctx)
 	end
 end
 
 function UI.DrawArrange()
+	App.arrange_h = 50 + ((App.num_strings) * 12)
 	local lane_w = Util.NumGridDivisions() * App.grid_w
-	reaper.ImGui_SetNextWindowContentSize(App.ctx, lane_w + 50, App.arrange_h - 20)
+	reaper.ImGui_SetNextWindowContentSize(App.ctx, lane_w + 45, App.arrange_h - 20)
 	reaper.ImGui_BeginChild(App.ctx, "Arrange", App.window_w - App.window_indent, App.arrange_h, true, reaper.ImGui_WindowFlags_HorizontalScrollbar())
-	
-	d_list = reaper.ImGui_GetWindowDrawList(App.ctx)
+	local draw_list = reaper.ImGui_GetWindowDrawList(App.ctx)
 	local scroll_x = reaper.ImGui_GetScrollX(App.ctx)
 	local winx, winy = reaper.ImGui_GetWindowPos(App.ctx)
 	local left_margin = 50
 	local top_margin = 30
-	local line_start_x = winx + left_margin - scroll_x
-	local line_end_x = winx + left_margin + lane_w - scroll_x
+	local lane_start_x = winx + left_margin - scroll_x
+	local lane_end_x = lane_start_x + lane_w
 	
 	-- Lanes
 	for i = 0, App.num_strings - 1 do
-		reaper.ImGui_DrawList_AddLine(d_list, line_start_x, winy + top_margin + (i * App.lane_v_spacing), line_end_x, winy + top_margin + (i * App.lane_v_spacing), Colors.lane)
+		reaper.ImGui_DrawList_AddLine(draw_list, lane_start_x, winy + top_margin + (i * App.lane_v_spacing), lane_end_x, winy + top_margin + (i * App.lane_v_spacing), Colors.lane)
 	end
 	
 	-- Measure divisions
 	local measure_w = (App.signature_cur_idx + 2) * App.grid_w * 4
 	
 	for i = 0, App.num_measures - 1 do
-		reaper.ImGui_DrawList_AddLine(d_list, winx + left_margin + measure_w + (measure_w * i) - scroll_x, winy + top_margin, winx + left_margin + measure_w + (measure_w * i) - scroll_x, winy + top_margin + ((App.num_strings - 1) * 12), Colors.red)
+		reaper.ImGui_DrawList_AddLine(draw_list, winx + left_margin + measure_w + (measure_w * i) - scroll_x, winy + top_margin, winx + left_margin + measure_w + (measure_w * i) - scroll_x, winy + top_margin + ((App.num_strings - 1) * 12), Colors.red)
 	end
 	
 	-- Grid divisions
 	for i = 0, App.num_grid_divisions - 1 do
-		reaper.ImGui_DrawList_AddLine(d_list, winx + left_margin + (App.grid_w * i) - scroll_x, winy + top_margin - 17, winx + left_margin + (App.grid_w * i) - scroll_x, winy + top_margin - 12, Colors.lane)
+		reaper.ImGui_DrawList_AddLine(draw_list, winx + left_margin + (App.grid_w * i) - scroll_x, winy + top_margin - 17, winx + left_margin + (App.grid_w * i) - scroll_x, winy + top_margin - 12, Colors.lane)
 	end
-	
-	-- reaper.ImGui_DrawList_AddRectFilled(d_list, winx+4, winy+1, winx+24, winy+20, Colors.bg)
 	
 	-- String legends
 	for i = 0, App.num_strings - 1 do
-		reaper.ImGui_DrawList_AddText(d_list, winx+8, winy+23+ (i * App.lane_v_spacing), Colors.string_name, App.instrument[App.num_strings - 4][i + 2])
+		reaper.ImGui_DrawList_AddText(draw_list, winx+8, winy+23+ (i * App.lane_v_spacing), Colors.string_name, App.instrument[App.num_strings - 4][i + 2] .. " *")
 	end
 	
-	-- reaper.ImGui_DrawList_AddText(d_list, winx+8, winy+23, Colors.string_name, "A#0 *")
-	-- reaper.ImGui_DrawList_AddText(d_list, winx+8, winy+23+ (1 * App.lane_v_spacing), Colors.string_name, "B0  *")
-	-- reaper.ImGui_DrawList_AddText(d_list, winx+8, winy+23+ (2 * App.lane_v_spacing), Colors.string_name, "C2  *")
+	-- Enter notes...
+	local note_entry_rect_x1 = winx + left_margin
+	local note_entry_rect_y1 = winy + top_margin - 5
+	local note_entry_rect_x2 = lane_end_x + 1
+	local note_entry_rect_y2 = note_entry_rect_y1 + 11 + (App.num_strings - 1) * App.lane_v_spacing
+	
+	reaper.ImGui_DrawList_AddRect(draw_list, lane_start_x, winy + top_margin - 5, lane_end_x + 1, winy+top_margin - 5 + 11 + ((App.num_strings - 1) * App.lane_v_spacing), Colors.red)
+	
+	-- get cell test 34 X 12
+	if reaper.ImGui_IsWindowHovered(App.ctx) then
+		local mx, my = reaper.ImGui_GetMousePos(App.ctx)
+		local cell_x = math.floor((mx - winx + scroll_x-15) / 34) - 1
+		local cell_y = math.floor((my - winy - top_margin + 5) / 12)
+		if mx > note_entry_rect_x1 and mx < winx + left_margin + lane_w-scroll_x-1  and my > note_entry_rect_y1 and my < note_entry_rect_y2  then
+			reaper.ShowConsoleMsg(cell_y .. "\n")
+			local test_x = winx + left_margin + (cell_x * 34) - scroll_x
+			local test_y = winy + top_margin + (cell_y * 12)
+			reaper.ImGui_DrawList_AddRectFilled(draw_list, test_x, test_y-5, test_x+34, test_y-5+12, Colors.measure)
+		end
+	end
+	-- if reaper.ImGui_IsWindowHovered(App.ctx) then
+	-- 	local mx, my = reaper.ImGui_GetMousePos(App.ctx)
+	-- 	local relmx = mx-winx
+	-- 	local relmy = my-winy
+	-- reaper.ShowConsoleMsg(relmx .. "\n")
+	-- reaper.ImGui_DrawList_AddRectFilled(draw_list, winx+relmx, winy+relmy, winx+relmx+50, winy+relmy+12, Colors.red)
+	-- end
 	
 	reaper.ImGui_EndChild(App.ctx)
 end
