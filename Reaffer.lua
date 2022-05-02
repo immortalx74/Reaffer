@@ -8,7 +8,7 @@ local App =
 	is_visible,
 	is_open,
 	icon_font,
-
+	
 	-- metrics
 	window_w = 800,
 	window_h = 600,
@@ -20,9 +20,10 @@ local App =
 	si_measures_w = 140,
 	arrange_h = 160,
 	grid_w = 34,
-
+	
 	-- defaults
-	active_tool_idx = 0,
+	wheel_delta = 50,
+	active_tool_idx = 1,
 	num_grid_divisions,
 	num_strings = 6,
 	num_measures = 4,
@@ -61,14 +62,51 @@ local App =
 
 local Colors = 
 {
-	lane = 0x202020FF,
-	string_name = 0xFF44FFFF,
-	measure = 0xFFFFFFFF,
-	gridline = 0x404040FF,
-	red = 0xFF0000FF,
+	lane = 0x606060FF,
 	bg = 0x0F0F0FFF,
-	active_tool = 0x23456D,
+	active_tool = 0x3D85E0FF,
+	note_preview = 0xFFFFFF88,
+	red = 0xFF0000FF,
 	text
+}
+
+local Tool = {}
+
+function Tool.Create()
+end
+
+function Tool.Select()
+end
+
+function Tool.Move()
+end
+
+function Tool.Draw()
+end
+
+function Tool.Erase()
+end
+
+function Tool.Cut()
+end
+
+function Tool.Copy()
+end
+
+function Tool.Paste()
+end
+
+local ToolBar = 
+{
+	[0] = 
+	{[0] = "a", "Create MIDI item in first selected track, at edit cursor", exec = Tool.Create},
+	{[0] = "e", "Select", exec = Tool.Select},
+	{[0] = "f", "Move", exec = Tool.Move},
+	{[0] = "g", "Draw", exec = Tool.Draw},
+	{[0] = "h", "Erase", exec = Tool.Erase},
+	{[0] = "b", "Cut", exec = Tool.Cut},
+	{[0] = "c", "Copy", exec = Tool.Copy},
+	{[0] = "d", "Paste", exec = Tool.Paste}
 }
 
 local Util = {}
@@ -84,6 +122,17 @@ end
 function Util.NumGridDivisions()
 	App.num_grid_divisions = App.num_measures * App.signature[App.signature_cur_idx][1] * App.signature[App.signature_cur_idx][2]
 	return App.num_grid_divisions
+end
+
+function Util.VelocityColor(v)
+	local g = 23
+	local bt = math.floor(127 - v)
+	local rt = 127 - bt
+
+	local r = (255 * rt) / 127
+	local b = (255 * bt) / 127
+
+	return b
 end
 
 local UI = {}
@@ -139,10 +188,8 @@ end
 function UI.DrawSI_Measures()
 	Util.HorSpacer(3)
 	reaper.ImGui_SetNextItemWidth(App.ctx, App.si_measures_w)
-	do
-		local ret, val = reaper.ImGui_SliderInt(App.ctx, "Measures##si_measures", App.num_measures, 1, 64)
-		App.num_measures = val
-	end
+	local ret, val = reaper.ImGui_SliderInt(App.ctx, "Measures##si_measures", App.num_measures, 1, 64)
+	App.num_measures = val
 end
 
 function UI.DrawTXT_Help()
@@ -159,195 +206,136 @@ function UI.DrawTXT_Help()
 end
 
 function UI.DrawToolbar()
-	reaper.ImGui_BeginChild(App.ctx, "Toolbar##win_toolbar")
-	
-	reaper.ImGui_PushStyleColor(App.ctx, reaper.ImGui_Col_Button(), Colors.bg)
-	
-	-- Create MIDI item
-	reaper.ImGui_PushFont(App.ctx, App.icon_font)
-	reaper.ImGui_Button(App.ctx, "a")
-	reaper.ImGui_PopFont(App.ctx)
-	
-	if reaper.ImGui_IsItemHovered(App.ctx) then
-		reaper.ImGui_BeginTooltip(App.ctx)
-		reaper.ImGui_Text(App.ctx, "Create MIDI item in first selected track, at edit cursor")
-		reaper.ImGui_EndTooltip(App.ctx)
+	if reaper.ImGui_BeginChild(App.ctx, "Toolbar##win_toolbar", App.window_w, 20, false, reaper.ImGui_WindowFlags_NoScrollbar()) then
+		reaper.ImGui_PushStyleColor(App.ctx, reaper.ImGui_Col_Button(), Colors.bg)
+		for i = 0, 7 do
+			reaper.ImGui_PushFont(App.ctx, App.icon_font)
+			
+			if i == App.active_tool_idx then
+				reaper.ImGui_PushStyleColor(App.ctx, reaper.ImGui_Col_Text(), Colors.active_tool)
+			else
+				reaper.ImGui_PushStyleColor(App.ctx, reaper.ImGui_Col_Text(), Colors.text)
+			end
+			if reaper.ImGui_Button(App.ctx, ToolBar[i][0] .. "##toolbar_button" .. i) then
+				if i >= 1 and i <= 4 then
+					App.active_tool_idx = i
+				end
+			end
+			reaper.ImGui_PopStyleColor(App.ctx)
+			reaper.ImGui_PopFont(App.ctx)
+			
+			if reaper.ImGui_IsItemHovered(App.ctx) then
+				reaper.ImGui_BeginTooltip(App.ctx)
+				reaper.ImGui_Text(App.ctx, ToolBar[i][1])
+				reaper.ImGui_EndTooltip(App.ctx)
+			end
+			
+			reaper.ImGui_SameLine(App.ctx)
+			if i == 0 or i == 4 then
+				Util.HorSpacer(3)
+			end
+		end
+		reaper.ImGui_PopStyleColor(App.ctx)
+		reaper.ImGui_EndChild(App.ctx)
 	end
-	
-	Util.HorSpacer(3)
-	
-	-- Select tool
-	reaper.ImGui_PushFont(App.ctx, App.icon_font)
-	if reaper.ImGui_Button(App.ctx, "e") then
-		App.active_tool = 0
-	end
-	reaper.ImGui_PopFont(App.ctx)
-	
-	if reaper.ImGui_IsItemHovered(App.ctx) then
-		reaper.ImGui_BeginTooltip(App.ctx)
-		reaper.ImGui_Text(App.ctx, "Select")
-		reaper.ImGui_EndTooltip(App.ctx)
-	end
-	
-	-- Move tool
-	reaper.ImGui_SameLine(App.ctx)
-	reaper.ImGui_PushFont(App.ctx, App.icon_font)
-	if reaper.ImGui_Button(App.ctx, "f") then
-		App.active_tool = 1
-	end
-	reaper.ImGui_PopFont(App.ctx)
-	
-	if reaper.ImGui_IsItemHovered(App.ctx) then
-		reaper.ImGui_BeginTooltip(App.ctx)
-		reaper.ImGui_Text(App.ctx, "Move")
-		reaper.ImGui_EndTooltip(App.ctx)
-	end
-	
-	-- Draw tool
-	reaper.ImGui_SameLine(App.ctx)
-	reaper.ImGui_PushFont(App.ctx, App.icon_font)
-	if reaper.ImGui_Button(App.ctx, "g") then
-		App.active_tool = 2
-	end
-	reaper.ImGui_PopFont(App.ctx)
-	
-	if reaper.ImGui_IsItemHovered(App.ctx) then
-		reaper.ImGui_BeginTooltip(App.ctx)
-		reaper.ImGui_Text(App.ctx, "Draw")
-		reaper.ImGui_EndTooltip(App.ctx)
-	end
-	
-	-- Erase tool
-	reaper.ImGui_SameLine(App.ctx)
-	reaper.ImGui_PushFont(App.ctx, App.icon_font)
-	if reaper.ImGui_Button(App.ctx, "h") then
-		App.active_tool = 3
-	end
-	reaper.ImGui_PopFont(App.ctx)
-	
-	if reaper.ImGui_IsItemHovered(App.ctx) then
-		reaper.ImGui_BeginTooltip(App.ctx)
-		reaper.ImGui_Text(App.ctx, "Erase")
-		reaper.ImGui_EndTooltip(App.ctx)
-	end
-	
-	Util.HorSpacer(3)
-	
-	-- Cut Tool
-	reaper.ImGui_PushFont(App.ctx, App.icon_font)
-	reaper.ImGui_Button(App.ctx, "b")
-	reaper.ImGui_PopFont(App.ctx)
-	
-	if reaper.ImGui_IsItemHovered(App.ctx) then
-		reaper.ImGui_BeginTooltip(App.ctx)
-		reaper.ImGui_Text(App.ctx, "Cut")
-		reaper.ImGui_EndTooltip(App.ctx)
-	end
-	
-	--Copy tool
-	reaper.ImGui_SameLine(App.ctx)
-	reaper.ImGui_PushFont(App.ctx, App.icon_font)
-	reaper.ImGui_Button(App.ctx, "c")
-	reaper.ImGui_PopFont(App.ctx)
-	
-	if reaper.ImGui_IsItemHovered(App.ctx) then
-		reaper.ImGui_BeginTooltip(App.ctx)
-		reaper.ImGui_Text(App.ctx, "Copy")
-		reaper.ImGui_EndTooltip(App.ctx)
-	end
-	
-	-- Paste tool
-	reaper.ImGui_SameLine(App.ctx)
-	reaper.ImGui_PushFont(App.ctx, App.icon_font)
-	reaper.ImGui_Button(App.ctx, "d")
-	reaper.ImGui_PopFont(App.ctx)
-	
-	if reaper.ImGui_IsItemHovered(App.ctx) then
-		reaper.ImGui_BeginTooltip(App.ctx)
-		reaper.ImGui_Text(App.ctx, "Paste")
-		reaper.ImGui_EndTooltip(App.ctx)
-	end
-	
-	reaper.ImGui_PopStyleColor(App.ctx)
-	
-	reaper.ImGui_EndChild(App.ctx)
 end
 
 function UI.DrawArrange()
 	App.arrange_h = 50 + ((App.num_strings) * 12)
 	local lane_w = Util.NumGridDivisions() * App.grid_w
 	reaper.ImGui_SetNextWindowContentSize(App.ctx, lane_w + 45, App.arrange_h - 20)
-	reaper.ImGui_BeginChild(App.ctx, "Arrange##win_arrange", App.window_w - App.window_indent, App.arrange_h, true, reaper.ImGui_WindowFlags_HorizontalScrollbar() | reaper.ImGui_WindowFlags_NoMove())
-	local draw_list = reaper.ImGui_GetWindowDrawList(App.ctx)
-	local scroll_x = reaper.ImGui_GetScrollX(App.ctx)
-	local winx, winy = reaper.ImGui_GetWindowPos(App.ctx)
-	local left_margin = 50
-	local top_margin = 30
-	local lane_start_x = winx + left_margin - scroll_x
-	local lane_end_x = lane_start_x + lane_w
-	
-	-- Lanes
-	for i = 0, App.num_strings - 1 do
-		reaper.ImGui_DrawList_AddLine(draw_list, lane_start_x, winy + top_margin + (i * App.lane_v_spacing), lane_end_x, winy + top_margin + (i * App.lane_v_spacing), Colors.lane)
-	end
-	
-	-- Measures and beats lines and legends
-	for i = 0, App.num_grid_divisions do
-		if i % App.signature[App.signature_cur_idx][1] == 0 then
-			
-			if i ~= App.num_grid_divisions then
-				local txt = "3-1"
-				reaper.ImGui_DrawList_AddTextEx(draw_list, nil, 11, winx + left_margin + (App.grid_w * i) - scroll_x, winy + top_margin - 20, Colors.red, txt)
-			end
-			
-			if (i ~= 0 and i % (App.signature[App.signature_cur_idx][1] * App.signature[App.signature_cur_idx][2]) == 0) or i == App.num_grid_divisions then
-				reaper.ImGui_DrawList_AddLine(draw_list, winx + left_margin + (App.grid_w * i) - scroll_x, winy + top_margin, winx + left_margin + (App.grid_w * i) - scroll_x, winy + top_margin + ((App.num_strings - 1) * 12), Colors.red)
-			end
-		else
-			reaper.ImGui_DrawList_AddLine(draw_list, winx + left_margin + (App.grid_w * i) - scroll_x, winy + top_margin - 17, winx + left_margin + (App.grid_w * i) - scroll_x, winy + top_margin - 12, Colors.lane)
+	if reaper.ImGui_BeginChild(App.ctx, "Arrange##win_arrange", App.window_w - App.window_indent, App.arrange_h, true, reaper.ImGui_WindowFlags_HorizontalScrollbar() | reaper.ImGui_WindowFlags_NoMove()) then
+		
+		local draw_list = reaper.ImGui_GetWindowDrawList(App.ctx)
+		local scroll_x = reaper.ImGui_GetScrollX(App.ctx)
+		local win_x, win_y = reaper.ImGui_GetWindowPos(App.ctx)
+		local left_margin = 50
+		local top_margin = 30
+		
+		-- Scroll horizontally with mousewheel
+		local mw = reaper.ImGui_GetMouseWheel(App.ctx)
+		scroll_x = scroll_x - mw * App.wheel_delta
+		reaper.ImGui_SetScrollX(App.ctx, scroll_x)
+		scroll_x = reaper.ImGui_GetScrollX(App.ctx) -- get back clamped value from ImGui
+
+		local lane_start_x = win_x + left_margin - scroll_x
+		local lane_end_x = lane_start_x + lane_w
+
+		-- Lanes
+		for i = 0, App.num_strings - 1 do
+			reaper.ImGui_DrawList_AddLine(draw_list, lane_start_x, win_y + top_margin + (i * App.lane_v_spacing), lane_end_x, win_y + top_margin + (i * App.lane_v_spacing), Colors.lane)
 		end
-	end
-	
-	-- String legends
-	for i = 0, App.num_strings - 1 do
-		reaper.ImGui_DrawList_AddText(draw_list, winx+8, winy+23+ (i * App.lane_v_spacing), Colors.string_name, App.instrument[App.num_strings - 4][i + 2] .. " *")
-	end
-	
-	-- Enter notes...
-	local note_entry_rect_x1 = winx + left_margin
-	local note_entry_rect_y1 = winy + top_margin - 5
-	local note_entry_rect_x2 = lane_end_x + 1
-	local note_entry_rect_y2 = note_entry_rect_y1 + 11 + (App.num_strings - 1) * App.lane_v_spacing
-	
-	-- reaper.ImGui_DrawList_AddRect(draw_list, lane_start_x, winy + top_margin - 5, lane_end_x + 1, winy+top_margin - 5 + 11 + ((App.num_strings - 1) * App.lane_v_spacing), Colors.red)
-	
-	-- get cell test 34 X 12
-	if reaper.ImGui_IsWindowHovered(App.ctx) then
-		local mx, my = reaper.ImGui_GetMousePos(App.ctx)
-		local cell_x = math.floor((mx - winx + scroll_x-15) / 34) - 1
-		local cell_y = math.floor((my - winy - top_margin + 5) / 12)
-		if mx > note_entry_rect_x1 and mx < winx + left_margin + lane_w-scroll_x-1  and my > note_entry_rect_y1 and my < note_entry_rect_y2  then
-			-- reaper.ShowConsoleMsg(cell_y .. "\n")
-			local test_x = winx + left_margin + (cell_x * 34) - scroll_x
-			local test_y = winy + top_margin + (cell_y * 12)
-			reaper.ImGui_DrawList_AddRectFilled(draw_list, test_x, test_y-5, test_x+34, test_y-5+12, Colors.measure)
+		
+		-- Measures & beats lines and legends
+		local measure_count = 1
+		local beat_count = 1
+		
+		for i = 0, App.num_grid_divisions do
+			if i % App.signature[App.signature_cur_idx][2] == 0 then
+				
+				if (i ~= 0 and i % (App.signature[App.signature_cur_idx][1] * App.signature[App.signature_cur_idx][2]) == 0) then
+					reaper.ImGui_DrawList_AddLine(draw_list, win_x + left_margin + (App.grid_w * i) - scroll_x, win_y + top_margin, win_x + left_margin + (App.grid_w * i) - scroll_x, win_y + top_margin + ((App.num_strings - 1) * 12), Colors.lane)
+					measure_count = measure_count + 1
+					beat_count = 1
+				end
+				
+				if i ~= App.num_grid_divisions then
+					local txt = measure_count .. "-" .. beat_count
+					reaper.ImGui_DrawList_AddTextEx(draw_list, nil, 11, win_x + left_margin + (App.grid_w * i) - scroll_x, win_y + top_margin - 20, Colors.text, txt)
+					beat_count = beat_count + 1
+				end
+				
+			else
+				reaper.ImGui_DrawList_AddLine(draw_list, win_x + left_margin + (App.grid_w * i) - scroll_x, win_y + top_margin - 17, win_x + left_margin + (App.grid_w * i) - scroll_x, win_y + top_margin - 12, Colors.lane)
+			end
 		end
+
+		-- mask rect
+		reaper.ImGui_DrawList_AddRectFilled(draw_list, win_x, win_y+2, win_x+left_margin, win_y+140, Colors.bg)
+		
+		-- String legends
+		for i = 0, App.num_strings - 1 do
+			reaper.ImGui_DrawList_AddText(draw_list, win_x+8, win_y+23+ (i * App.lane_v_spacing), Colors.text, App.instrument[App.num_strings - 4][i + 2] .. " *")
+		end
+
+		
+		-- Enter notes...
+		local note_entry_rect_x1 = win_x + left_margin
+		local note_entry_rect_y1 = win_y + top_margin - 5
+		local note_entry_rect_x2 = lane_end_x + 1
+		local note_entry_rect_y2 = note_entry_rect_y1 + 11 + (App.num_strings - 1) * App.lane_v_spacing
+		
+		-- debug draw arrange mouse area
+		-- reaper.ImGui_DrawList_AddRect(draw_list, lane_start_x, win_y + top_margin - 5, lane_end_x + 1, win_y+top_margin - 5 + 11 + ((App.num_strings - 1) * App.lane_v_spacing), Colors.red)
+		
+		-- get cell test 34 X 12
+		if reaper.ImGui_IsWindowHovered(App.ctx) then
+			local mx, my = reaper.ImGui_GetMousePos(App.ctx)
+			local cell_x = math.floor((mx - win_x + scroll_x-15) / 34) - 1
+			local cell_y = math.floor((my - win_y - top_margin + 5) / 12)
+			if mx > note_entry_rect_x1 and mx < win_x + left_margin + lane_w-scroll_x-1  and my > note_entry_rect_y1 and my < note_entry_rect_y2  then
+				-- reaper.ShowConsoleMsg(cell_y .. "\n")
+				local test_x = win_x + left_margin + (cell_x * 34) - scroll_x
+				local test_y = win_y + top_margin + (cell_y * 12)
+				reaper.ImGui_DrawList_AddRectFilled(draw_list, test_x, test_y-5, test_x+34, test_y-5+12, Colors.note_preview)
+			end
+		end
+		-- if reaper.ImGui_IsWindowHovered(App.ctx) then
+		-- 	local mx, my = reaper.ImGui_GetMousePos(App.ctx)
+		-- 	local relmx = mx-win_x
+		-- 	local relmy = my-win_y
+		-- reaper.ShowConsoleMsg(relmx .. "\n")
+		-- reaper.ImGui_DrawList_AddRectFilled(draw_list, win_x+relmx, win_y+relmy, win_x+relmx+50, win_y+relmy+12, Colors.red)
+		-- end
+		
+		reaper.ImGui_EndChild(App.ctx)
 	end
-	-- if reaper.ImGui_IsWindowHovered(App.ctx) then
-	-- 	local mx, my = reaper.ImGui_GetMousePos(App.ctx)
-	-- 	local relmx = mx-winx
-	-- 	local relmy = my-winy
-	-- reaper.ShowConsoleMsg(relmx .. "\n")
-	-- reaper.ImGui_DrawList_AddRectFilled(draw_list, winx+relmx, winy+relmy, winx+relmx+50, winy+relmy+12, Colors.red)
-	-- end
-	
-	reaper.ImGui_EndChild(App.ctx)
 end
 
 function App.Init()
 	local script_folder = debug.getinfo(1).source:match("@?(.*[\\|/])")
 	App.ctx = reaper.ImGui_CreateContext('Riffer script')
-	App.icon_font = reaper.ImGui_CreateFont(script_folder .. "icons.ttf", 13)
+	App.icon_font = reaper.ImGui_CreateFont(script_folder .. "icons.ttf", 14)
 	reaper.ImGui_AttachFont(App.ctx, App.icon_font)
 	Colors.text = reaper.ImGui_GetStyleColor(App.ctx, reaper.ImGui_Col_Text())
 	App.window_indent = reaper.ImGui_StyleVar_IndentSpacing()
@@ -365,13 +353,13 @@ function App.Loop()
 		UI.DrawSI_Measures()
 		UI.DrawTXT_Help()
 		Util.HorSpacer(3)
-		if reaper.ImGui_Button(App.ctx, "Debug...") then reaper.ShowConsoleMsg(App.instrument[2][2]); end
+		if reaper.ImGui_Button(App.ctx, "Debug...") then reaper.ShowConsoleMsg(Util.VelocityColor(100))  end
 		UI.DrawArrange()
 		UI.DrawToolbar()
 	end
 	
 	reaper.ImGui_End(App.ctx)	
-
+	
 	if App.is_open then
 		reaper.defer(App.Loop)
 	else
