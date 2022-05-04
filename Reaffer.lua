@@ -2,28 +2,28 @@
 
 local e_EditorState =
 {
-	SelectReady = 0,
-	MoveReady = 1,
-	DrawReady = 2,
-	EraseReady = 3,
-	BeginNote = 4,
-	CommitNote = 5,
-	PitchCurrent = 6,
-	PitchExisting = 7,
-	ResizeCurrent = 8,
-	ResizeExisting = 9
+	SelectReady = 1,
+	MoveReady = 2,
+	DrawReady = 3,
+	EraseReady = 4,
+	BeginNote = 5,
+	CommitNote = 6,
+	PitchCurrent = 7,
+	PitchExisting = 8,
+	ResizeCurrent = 9,
+	ResizeExisting = 10
 }
 
 local e_Tool = 
 {
-	Create = 0,
-	Select = 1,
-	Move = 2,
-	Draw = 3,
-	Erase = 4,
-	Cut = 5,
-	Copy = 6,
-	Paste = 7
+	Create = 1,
+	Select = 2,
+	Move = 3,
+	Draw = 4,
+	Erase = 5,
+	Cut = 6,
+	Copy = 7,
+	Paste = 8
 }
 
 local App =
@@ -59,36 +59,37 @@ local App =
 	num_strings = 6,
 	num_measures = 4,
 	quantize_cur_idx = 3,
-	signature_cur_idx = 2,
+	signature_cur_idx = 3,
 	
 	-- data
 	quantize = {"1/1", "1/2", "1/4", "1/8", "1/16", "1/32", "1/64"},
+
 	signature = {
-		-- caption, beats per measure, subdivisions per beat
-		[0] = 
-		{[0] = "2/4", 2, 4},
-		{[0] = "3/4", 3, 4},
-		{[0] = "4/4", 4, 4},
-		{[0] = "5/4", 5, 4},
-		{[0] = "6/4", 6, 4},
-		{[0] = "7/4", 7, 4},
-		{[0] = "8/4", 8, 4},
-		{[0] = "6/8", 3, 4},
-		{[0] = "3/4 Tri", 3, 3},
-		{[0] = "4/4 Tri", 4, 3},
-		{[0] = "8/4 Tri", 8, 3}
+		{caption = "2/4", beats = 2, subs = 4},
+		{caption = "3/4", beats = 3, subs = 4},
+		{caption = "4/4", beats = 4, subs = 4},
+		{caption = "5/4", beats = 5, subs = 4},
+		{caption = "6/4", beats = 6, subs = 4},
+		{caption = "7/4", beats = 7, subs = 4},
+		{caption = "8/4", beats = 8, subs = 4},
+		{caption = "6/8", beats = 3, subs = 4},
+		{caption = "3/4 Tri", beats = 3, subs = 3},
+		{caption = "4/4 Tri", beats = 4, subs = 3},
+		{caption = "8/4 Tri", beats = 8, subs = 3}
 	},
+
 	instrument =
 	{
-		[0] = 
-		{[0] = 4, 25, "G2 ", "D2 ", "A1 ", "E1 "},
-		{[0] = 5, 26, "G2 ", "D2 ", "A1 ", "E1 ", "B0 "},
-		{[0] = 6, 25, "E4 ", "B3 ", "G3 ", "D3 ", "A2 ", "E2 "},
-		{[0] = 7, 25, "E4 ", "B3 ", "G3 ", "D3 ", "A2 ", "E2 ", "B1 "},
-		{[0] = 8, 25, "E4 ", "B3 ", "G3 ", "D3 ", "A2 ", "E2 ", "B1 ", "F#1"},
-		{[0] = 9, 25, "E4 ", "B3 ", "G3 ", "D3 ", "A2 ", "E2 ", "B1 ", "F#1", "C#1"}
+		{num_strings = 4, open = 25, "G2 ", "D2 ", "A1 ", "E1 "},
+		{num_strings = 5, open = 26, "G2 ", "D2 ", "A1 ", "E1 ", "B0 "},
+		{num_strings = 6, open = 25, "E4 ", "B3 ", "G3 ", "D3 ", "A2 ", "E2 "},
+		{num_strings = 7, open = 25, "E4 ", "B3 ", "G3 ", "D3 ", "A2 ", "E2 ", "B1 "},
+		{num_strings = 8, open = 25, "E4 ", "B3 ", "G3 ", "D3 ", "A2 ", "E2 ", "B1 ", "F#1"},
+		{num_strings = 9, open = 25, "E4 ", "B3 ", "G3 ", "D3 ", "A2 ", "E2 ", "B1 ", "F#1", "C#1"}
 	},
-	note_sequence = {[0] = "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"},
+
+	note_sequence = {"C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"},
+	
 	note_list =
 	{
 		{offset = 6, string_idx = 2, num = 25, velocity = 127, duration = 1, selected = false},
@@ -113,21 +114,20 @@ function Editor.OnClick(cx, cy)
 		App.editor_state = e_EditorState.BeginNote
 
 		local temp_note = {offset = cx, string_idx = cy, num = 25, velocity = 127, duration = 1, selected = false}
-		App.note_list[#App.note_list+1] = temp_note
+		App.note_list[#App.note_list + 1] = temp_note
 	end
 end
 
 local ToolBar = 
 {
-	[0] = 
-	{[0] = "a", "Create MIDI item in first selected track, at edit cursor"},
-	{[0] = "e", "Select"},
-	{[0] = "f", "Move"},
-	{[0] = "g", "Draw"},
-	{[0] = "h", "Erase"},
-	{[0] = "b", "Cut"},
-	{[0] = "c", "Copy"},
-	{[0] = "d", "Paste"}
+	{icon = "a", tooltip = "Create MIDI item in first selected track, at edit cursor"},
+	{icon = "e", tooltip = "Select"},
+	{icon = "f", tooltip = "Move"},
+	{icon = "g", tooltip = "Draw"},
+	{icon = "h", tooltip = "Erase"},
+	{icon = "b", tooltip = "Cut"},
+	{icon = "c", tooltip = "Copy"},
+	{icon = "d", tooltip = "Paste"}
 }
 
 local Util = {}
@@ -141,7 +141,7 @@ function Util.HorSpacer(num_spacers)
 end
 
 function Util.NumGridDivisions()
-	App.num_grid_divisions = App.num_measures * App.signature[App.signature_cur_idx][1] * App.signature[App.signature_cur_idx][2]
+	App.num_grid_divisions = App.num_measures * App.signature[App.signature_cur_idx].beats * App.signature[App.signature_cur_idx].subs
 	return App.num_grid_divisions
 end
 
@@ -172,7 +172,7 @@ end
 function Util.NoteNumToName(note_num)
 	local mul = math.floor(note_num / 12)
 	local idx = note_num - (mul * 12)
-	return App.note_sequence[idx] .. mul - 1
+	return App.note_sequence[idx + 1] .. mul - 1
 end
 
 function Util.StateHandler()
@@ -195,13 +195,13 @@ end
 function UI.DrawCB_Strings()
 	reaper.ImGui_SetNextItemWidth(App.ctx, App.cb_strings_w)
 	if reaper.ImGui_BeginCombo(App.ctx, "Strings##cb_strings", App.num_strings) then
-		local strings = {[0] = 4, 5, 6, 7, 8, 9}
-		if reaper.ImGui_Selectable(App.ctx, strings[0], App.num_strings == 4) then App.num_strings = 4; end
-		if reaper.ImGui_Selectable(App.ctx, strings[1], App.num_strings == 5) then App.num_strings = 5; end
-		if reaper.ImGui_Selectable(App.ctx, strings[2], App.num_strings == 6) then App.num_strings = 6; end
-		if reaper.ImGui_Selectable(App.ctx, strings[3], App.num_strings == 7) then App.num_strings = 7; end
-		if reaper.ImGui_Selectable(App.ctx, strings[4], App.num_strings == 8) then App.num_strings = 8; end
-		if reaper.ImGui_Selectable(App.ctx, strings[5], App.num_strings == 9) then App.num_strings = 9; end
+		local strings = {4, 5, 6, 7, 8, 9}
+		if reaper.ImGui_Selectable(App.ctx, strings[1], App.num_strings == 4) then App.num_strings = 4; end
+		if reaper.ImGui_Selectable(App.ctx, strings[2], App.num_strings == 5) then App.num_strings = 5; end
+		if reaper.ImGui_Selectable(App.ctx, strings[3], App.num_strings == 6) then App.num_strings = 6; end
+		if reaper.ImGui_Selectable(App.ctx, strings[4], App.num_strings == 7) then App.num_strings = 7; end
+		if reaper.ImGui_Selectable(App.ctx, strings[5], App.num_strings == 8) then App.num_strings = 8; end
+		if reaper.ImGui_Selectable(App.ctx, strings[6], App.num_strings == 9) then App.num_strings = 9; end
 		reaper.ImGui_EndCombo(App.ctx)
 	end
 end
@@ -209,36 +209,21 @@ end
 function UI.DrawCB_Signature()
 	Util.HorSpacer(3)
 	reaper.ImGui_SetNextItemWidth(App.ctx, App.cb_signature_w)
-	if reaper.ImGui_BeginCombo(App.ctx, "Signature##cb_signature", App.signature[App.signature_cur_idx][0], reaper.ImGui_ComboFlags_HeightLarge()) then
-		if reaper.ImGui_Selectable(App.ctx, App.signature[0][0], App.signature_cur_idx == 0) then App.signature_cur_idx = 0; end
-		if reaper.ImGui_Selectable(App.ctx, App.signature[1][0], App.signature_cur_idx == 1) then App.signature_cur_idx = 1; end
-		if reaper.ImGui_Selectable(App.ctx, App.signature[2][0], App.signature_cur_idx == 2) then App.signature_cur_idx = 2; end
-		if reaper.ImGui_Selectable(App.ctx, App.signature[3][0], App.signature_cur_idx == 3) then App.signature_cur_idx = 3; end
-		if reaper.ImGui_Selectable(App.ctx, App.signature[4][0], App.signature_cur_idx == 4) then App.signature_cur_idx = 4; end
-		if reaper.ImGui_Selectable(App.ctx, App.signature[5][0], App.signature_cur_idx == 5) then App.signature_cur_idx = 5; end
-		if reaper.ImGui_Selectable(App.ctx, App.signature[6][0], App.signature_cur_idx == 6) then App.signature_cur_idx = 6; end
-		if reaper.ImGui_Selectable(App.ctx, App.signature[7][0], App.signature_cur_idx == 7) then App.signature_cur_idx = 7; end
-		if reaper.ImGui_Selectable(App.ctx, App.signature[8][0], App.signature_cur_idx == 7) then App.signature_cur_idx = 8; end
-		if reaper.ImGui_Selectable(App.ctx, App.signature[9][0], App.signature_cur_idx == 7) then App.signature_cur_idx = 9; end
-		if reaper.ImGui_Selectable(App.ctx, App.signature[10][0], App.signature_cur_idx == 7) then App.signature_cur_idx = 10; end
+	if reaper.ImGui_BeginCombo(App.ctx, "Signature##cb_signature", App.signature[App.signature_cur_idx].caption, reaper.ImGui_ComboFlags_HeightLarge()) then
+		if reaper.ImGui_Selectable(App.ctx, App.signature[1].caption, App.signature_cur_idx == 1) then App.signature_cur_idx = 1; end
+		if reaper.ImGui_Selectable(App.ctx, App.signature[2].caption, App.signature_cur_idx == 2) then App.signature_cur_idx = 2; end
+		if reaper.ImGui_Selectable(App.ctx, App.signature[3].caption, App.signature_cur_idx == 3) then App.signature_cur_idx = 3; end
+		if reaper.ImGui_Selectable(App.ctx, App.signature[4].caption, App.signature_cur_idx == 4) then App.signature_cur_idx = 4; end
+		if reaper.ImGui_Selectable(App.ctx, App.signature[5].caption, App.signature_cur_idx == 5) then App.signature_cur_idx = 5; end
+		if reaper.ImGui_Selectable(App.ctx, App.signature[6].caption, App.signature_cur_idx == 6) then App.signature_cur_idx = 6; end
+		if reaper.ImGui_Selectable(App.ctx, App.signature[7].caption, App.signature_cur_idx == 7) then App.signature_cur_idx = 7; end
+		if reaper.ImGui_Selectable(App.ctx, App.signature[8].caption, App.signature_cur_idx == 8) then App.signature_cur_idx = 8; end
+		if reaper.ImGui_Selectable(App.ctx, App.signature[9].caption, App.signature_cur_idx == 9) then App.signature_cur_idx = 9; end
+		if reaper.ImGui_Selectable(App.ctx, App.signature[10].caption, App.signature_cur_idx == 10) then App.signature_cur_idx = 10; end
+		if reaper.ImGui_Selectable(App.ctx, App.signature[11].caption, App.signature_cur_idx == 11) then App.signature_cur_idx = 11; end
 		reaper.ImGui_EndCombo(App.ctx)
 	end
 end
-
--- function UI.DrawCB_Quantize()
--- 	Util.HorSpacer(3)
--- 	reaper.ImGui_SetNextItemWidth(App.ctx, App.cb_quantize_w)
--- 	if reaper.ImGui_BeginCombo(App.ctx, "Quantize##cb_quantize", App.quantize[App.quantize_cur_idx]) then
--- 		if reaper.ImGui_Selectable(App.ctx, App.quantize[0], App.quantize_cur_idx == 0) then App.quantize_cur_idx = 0; end
--- 		if reaper.ImGui_Selectable(App.ctx, App.quantize[1], App.quantize_cur_idx == 1) then App.quantize_cur_idx = 1; end
--- 		if reaper.ImGui_Selectable(App.ctx, App.quantize[2], App.quantize_cur_idx == 2) then App.quantize_cur_idx = 2; end
--- 		if reaper.ImGui_Selectable(App.ctx, App.quantize[3], App.quantize_cur_idx == 3) then App.quantize_cur_idx = 3; end
--- 		if reaper.ImGui_Selectable(App.ctx, App.quantize[4], App.quantize_cur_idx == 4) then App.quantize_cur_idx = 4; end
--- 		if reaper.ImGui_Selectable(App.ctx, App.quantize[5], App.quantize_cur_idx == 5) then App.quantize_cur_idx = 5; end
--- 		if reaper.ImGui_Selectable(App.ctx, App.quantize[6], App.quantize_cur_idx == 6) then App.quantize_cur_idx = 6; end
--- 		reaper.ImGui_EndCombo(App.ctx)
--- 	end
--- end
 
 function UI.DrawCB_Quantize()
 	Util.HorSpacer(3)
@@ -278,7 +263,7 @@ end
 function UI.DrawToolbar()
 	if reaper.ImGui_BeginChild(App.ctx, "Toolbar##win_toolbar", App.window_w, 20, false, reaper.ImGui_WindowFlags_NoScrollbar()) then
 		reaper.ImGui_PushStyleColor(App.ctx, reaper.ImGui_Col_Button(), Colors.bg)
-		for i = 0, 7 do
+		for i = 1, 8 do
 			reaper.ImGui_PushFont(App.ctx, App.icon_font)
 			
 			if i == App.active_tool then
@@ -286,8 +271,8 @@ function UI.DrawToolbar()
 			else
 				reaper.ImGui_PushStyleColor(App.ctx, reaper.ImGui_Col_Text(), Colors.text)
 			end
-			if reaper.ImGui_Button(App.ctx, ToolBar[i][0] .. "##toolbar_button" .. i) then
-				if i >= 1 and i <= 4 then
+			if reaper.ImGui_Button(App.ctx, ToolBar[i].icon .. "##toolbar_button" .. i) then
+				if i >= 2 and i <= 5 then
 					App.active_tool = i
 				end
 			end
@@ -296,12 +281,12 @@ function UI.DrawToolbar()
 			
 			if reaper.ImGui_IsItemHovered(App.ctx) then
 				reaper.ImGui_BeginTooltip(App.ctx)
-				reaper.ImGui_Text(App.ctx, ToolBar[i][1])
+				reaper.ImGui_Text(App.ctx, ToolBar[i].tooltip)
 				reaper.ImGui_EndTooltip(App.ctx)
 			end
 			
 			reaper.ImGui_SameLine(App.ctx)
-			if i == 0 or i == 4 then
+			if i == 1 or i == 5 then
 				Util.HorSpacer(3)
 			end
 		end
@@ -339,9 +324,9 @@ function UI.DrawArrange()
 		local beat_count = 1
 		
 		for i = 0, App.num_grid_divisions do
-			if i % App.signature[App.signature_cur_idx][2] == 0 then
+			if i % App.signature[App.signature_cur_idx].subs == 0 then
 				
-				if (i ~= 0 and i % (App.signature[App.signature_cur_idx][1] * App.signature[App.signature_cur_idx][2]) == 0) then
+				if (i ~= 0 and i % (App.signature[App.signature_cur_idx].beats * App.signature[App.signature_cur_idx].subs) == 0) then
 					reaper.ImGui_DrawList_AddLine(draw_list, win_x + App.left_margin + (App.grid_w * i) - scroll_x, win_y + App.top_margin, win_x + App.left_margin + (App.grid_w * i) - scroll_x, win_y + App.top_margin + ((App.num_strings - 1) * 12), Colors.lane)
 					measure_count = measure_count + 1
 					beat_count = 1
@@ -397,7 +382,7 @@ function UI.DrawArrange()
 		
 		-- String legends
 		for i = 0, App.num_strings - 1 do
-			reaper.ImGui_DrawList_AddText(draw_list, win_x+8, win_y+23+ (i * App.lane_v_spacing), Colors.text, App.instrument[App.num_strings - 4][i + 2] .. " *")
+			reaper.ImGui_DrawList_AddText(draw_list, win_x+8, win_y+23+ (i * App.lane_v_spacing), Colors.text, App.instrument[App.num_strings - 3][i + 1] .. " *")
 		end
 		
 		reaper.ImGui_EndChild(App.ctx)
