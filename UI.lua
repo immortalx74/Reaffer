@@ -5,15 +5,15 @@ function UI.DrawNotes(draw_list)
 	local note_y
 	local selected
 	
-	for i, v in ipairs(App.note_list) do
-		if App.note_list[i].string_idx < App.num_strings then -- When switching from higher string count instrument to a lower one, notes are kept but hidden
-			note_x = App.arrange_win_x + 50 + (App.note_list[i].offset * App.note_w) - App.scroll_x
-			note_y = App.arrange_win_y + 30 + (App.note_list[i].string_idx * App.note_h) - 5
-			selected = App.note_list[i].selected
-			reaper.ImGui_DrawList_AddRectFilled(draw_list, note_x, note_y, note_x + (App.note_w * App.note_list[i].duration) -1, note_y + App.note_h-1, Util.VelocityColor(App.note_list[i].velocity), 40)
-			reaper.ImGui_DrawList_AddText(draw_list, note_x + 5, note_y - 2, Colors.text, Util.NotePitchToName(App.note_list[i].pitch))
+	for i, note in ipairs(App.note_list) do
+		if note.string_idx < App.num_strings then -- When switching from higher string count instrument to a lower one, notes are kept but hidden
+			note_x = App.arrange_win_x + 50 + (note.offset * App.note_w) - App.scroll_x
+			note_y = App.arrange_win_y + 30 + (note.string_idx * App.note_h) - 5
+			selected = note.selected
+			reaper.ImGui_DrawList_AddRectFilled(draw_list, note_x, note_y, note_x + (App.note_w * note.duration) -1, note_y + App.note_h-1, Util.VelocityColor(note.velocity), 40)
+			reaper.ImGui_DrawList_AddText(draw_list, note_x + 5, note_y - 2, Colors.text, Util.NotePitchToName(note.pitch))
 			if selected then
-				reaper.ImGui_DrawList_AddRect(draw_list, note_x, note_y, note_x + (App.note_w * App.note_list[i].duration) -1, note_y + App.note_h-1, Colors.text, 40, reaper.ImGui_DrawFlags_None(), 2)
+				reaper.ImGui_DrawList_AddRect(draw_list, note_x, note_y, note_x + (App.note_w * note.duration) -1, note_y + App.note_h-1, Colors.text, 40, reaper.ImGui_DrawFlags_None(), 2)
 			end
 		end
 	end
@@ -21,14 +21,11 @@ end
 
 function UI.DrawCB_Strings()
 	reaper.ImGui_SetNextItemWidth(App.ctx, App.cb_strings_w)
+	
 	if reaper.ImGui_BeginCombo(App.ctx, "Strings##cb_strings", App.num_strings) then
-		local strings = {4, 5, 6, 7, 8, 9}
-		if reaper.ImGui_Selectable(App.ctx, strings[1], App.num_strings == 4) then App.num_strings = 4; end
-		if reaper.ImGui_Selectable(App.ctx, strings[2], App.num_strings == 5) then App.num_strings = 5; end
-		if reaper.ImGui_Selectable(App.ctx, strings[3], App.num_strings == 6) then App.num_strings = 6; end
-		if reaper.ImGui_Selectable(App.ctx, strings[4], App.num_strings == 7) then App.num_strings = 7; end
-		if reaper.ImGui_Selectable(App.ctx, strings[5], App.num_strings == 8) then App.num_strings = 8; end
-		if reaper.ImGui_Selectable(App.ctx, strings[6], App.num_strings == 9) then App.num_strings = 9; end
+		for i = 4, 9 do
+			if reaper.ImGui_Selectable(App.ctx, i, App.num_strings == i) then App.num_strings = i; end
+		end
 		reaper.ImGui_EndCombo(App.ctx)
 	end
 end
@@ -37,17 +34,9 @@ function UI.DrawCB_Signature()
 	Util.HorSpacer(3)
 	reaper.ImGui_SetNextItemWidth(App.ctx, App.cb_signature_w)
 	if reaper.ImGui_BeginCombo(App.ctx, "Signature##cb_signature", App.signature[App.signature_cur_idx].caption, reaper.ImGui_ComboFlags_HeightLarge()) then
-		if reaper.ImGui_Selectable(App.ctx, App.signature[1].caption, App.signature_cur_idx == 1) then App.signature_cur_idx = 1; end
-		if reaper.ImGui_Selectable(App.ctx, App.signature[2].caption, App.signature_cur_idx == 2) then App.signature_cur_idx = 2; end
-		if reaper.ImGui_Selectable(App.ctx, App.signature[3].caption, App.signature_cur_idx == 3) then App.signature_cur_idx = 3; end
-		if reaper.ImGui_Selectable(App.ctx, App.signature[4].caption, App.signature_cur_idx == 4) then App.signature_cur_idx = 4; end
-		if reaper.ImGui_Selectable(App.ctx, App.signature[5].caption, App.signature_cur_idx == 5) then App.signature_cur_idx = 5; end
-		if reaper.ImGui_Selectable(App.ctx, App.signature[6].caption, App.signature_cur_idx == 6) then App.signature_cur_idx = 6; end
-		if reaper.ImGui_Selectable(App.ctx, App.signature[7].caption, App.signature_cur_idx == 7) then App.signature_cur_idx = 7; end
-		if reaper.ImGui_Selectable(App.ctx, App.signature[8].caption, App.signature_cur_idx == 8) then App.signature_cur_idx = 8; end
-		if reaper.ImGui_Selectable(App.ctx, App.signature[9].caption, App.signature_cur_idx == 9) then App.signature_cur_idx = 9; end
-		if reaper.ImGui_Selectable(App.ctx, App.signature[10].caption, App.signature_cur_idx == 10) then App.signature_cur_idx = 10; end
-		if reaper.ImGui_Selectable(App.ctx, App.signature[11].caption, App.signature_cur_idx == 11) then App.signature_cur_idx = 11; end
+		for i = 1, 11 do
+			if reaper.ImGui_Selectable(App.ctx, App.signature[i].caption, App.signature_cur_idx == i) then App.signature_cur_idx = i; end
+		end
 		reaper.ImGui_EndCombo(App.ctx)
 	end
 end
@@ -56,13 +45,9 @@ function UI.DrawCB_Quantize()
 	Util.HorSpacer(3)
 	reaper.ImGui_SetNextItemWidth(App.ctx, App.cb_quantize_w)
 	if reaper.ImGui_BeginCombo(App.ctx, "Quantize##cb_quantize", App.quantize[App.quantize_cur_idx]) then
-		if reaper.ImGui_Selectable(App.ctx, App.quantize[1], App.quantize_cur_idx == 1) then App.quantize_cur_idx = 1; end
-		if reaper.ImGui_Selectable(App.ctx, App.quantize[2], App.quantize_cur_idx == 2) then App.quantize_cur_idx = 2; end
-		if reaper.ImGui_Selectable(App.ctx, App.quantize[3], App.quantize_cur_idx == 3) then App.quantize_cur_idx = 3; end
-		if reaper.ImGui_Selectable(App.ctx, App.quantize[4], App.quantize_cur_idx == 4) then App.quantize_cur_idx = 4; end
-		if reaper.ImGui_Selectable(App.ctx, App.quantize[5], App.quantize_cur_idx == 5) then App.quantize_cur_idx = 5; end
-		if reaper.ImGui_Selectable(App.ctx, App.quantize[6], App.quantize_cur_idx == 6) then App.quantize_cur_idx = 6; end
-		if reaper.ImGui_Selectable(App.ctx, App.quantize[7], App.quantize_cur_idx == 7) then App.quantize_cur_idx = 7; end
+		for i = 1, 7 do
+			if reaper.ImGui_Selectable(App.ctx, App.quantize[i], App.quantize_cur_idx == i) then App.quantize_cur_idx = i; end
+		end
 		reaper.ImGui_EndCombo(App.ctx)
 	end
 end
@@ -180,16 +165,15 @@ function UI.DrawArrange()
 		local rect_y2 = rect_y1 + 11 + (App.num_strings - 1) * App.lane_v_spacing
 		
 		if reaper.ImGui_IsWindowHovered(App.ctx) then
-			local cell_x = math.floor((App.mouse_x - App.arrange_win_x + App.scroll_x -15) / 34) - 1
-			local cell_y = math.floor((App.mouse_y - App.arrange_win_y - App.top_margin + 5) / 12)
+			local cell_x = Util.GetCellX()
+			local cell_y = Util.GetCellY()
 			
-			if App.mouse_x > rect_x1 and App.mouse_x < rect_x2  and App.mouse_y > rect_y1 and App.mouse_y < rect_y2  then
-				
-				
-				local preview_x = App.arrange_win_x + App.left_margin + (cell_x * App.note_w) - App.scroll_x
-				local preview_y = App.arrange_win_y + App.top_margin + (cell_y * App.note_h) - 5
-				reaper.ImGui_DrawList_AddRectFilled(draw_list, preview_x, preview_y, preview_x + App.note_w - 1, preview_y + App.note_h - 1, Colors.note_preview, 40)
-				
+			if App.mouse_x > rect_x1 and App.mouse_x < rect_x2  and App.mouse_y > rect_y1 and App.mouse_y < rect_y2  then	
+				if Util.IsCellEmpty(cell_x, cell_y, true) then
+					local preview_x = App.arrange_win_x + App.left_margin + (cell_x * App.note_w) - App.scroll_x
+					local preview_y = App.arrange_win_y + App.top_margin + (cell_y * App.note_h) - 5
+					reaper.ImGui_DrawList_AddRectFilled(draw_list, preview_x, preview_y, preview_x + App.note_w - 1, preview_y + App.note_h - 1, Colors.note_preview, 40)
+				end
 				if reaper.ImGui_IsMouseClicked(App.ctx, 0) then
 					Editor.OnClick(cell_x, cell_y)
 				end
