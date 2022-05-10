@@ -10,10 +10,10 @@ function UI.DrawNotes(draw_list)
 			note_x = App.arrange_win_x + 50 + (note.offset * App.note_w) - App.scroll_x
 			note_y = App.arrange_win_y + 30 + (note.string_idx * App.note_h) - 5
 			selected = note.selected
-			reaper.ImGui_DrawList_AddRectFilled(draw_list, note_x, note_y, note_x + (App.note_w * note.duration) -1, note_y + App.note_h-1, Util.VelocityColor(note.velocity), 40)
+			reaper.ImGui_DrawList_AddRectFilled(draw_list, note_x, note_y, note_x + (App.note_w * note.duration) -1, note_y + App.note_h-1, Util.VelocityColor(note.velocity), 6)
 			reaper.ImGui_DrawList_AddText(draw_list, note_x + 5, note_y - 2, Colors.text, Util.NotePitchToName(note.pitch))
 			if selected then
-				reaper.ImGui_DrawList_AddRect(draw_list, note_x, note_y, note_x + (App.note_w * note.duration) -1, note_y + App.note_h-1, Colors.text, 40, reaper.ImGui_DrawFlags_None(), 2)
+				reaper.ImGui_DrawList_AddRect(draw_list, note_x, note_y, note_x + (App.note_w * note.duration) -1, note_y + App.note_h-1, Colors.text, 40, reaper.ImGui_DrawFlags_None(), 1)
 			end
 		end
 	end
@@ -84,8 +84,10 @@ function UI.DrawToolbar()
 				reaper.ImGui_PushStyleColor(App.ctx, reaper.ImGui_Col_Text(), Colors.text)
 			end
 			if reaper.ImGui_Button(App.ctx, ToolBar[i].icon .. "##toolbar_button" .. i) then
-				if i >= 2 and i <= 5 then -- only the note tools can be active
+				if i >= e_Tool.Select and i <= e_Tool.Erase then -- only the note tools can be active
 					App.active_tool = i
+				elseif i == e_Tool.Create then
+					Util.CreateMIDI()
 				end
 			end
 			reaper.ImGui_PopStyleColor(App.ctx)
@@ -98,7 +100,7 @@ function UI.DrawToolbar()
 			end
 			
 			reaper.ImGui_SameLine(App.ctx)
-			if i == 1 or i == 5 then
+			if i == e_Tool.Create or i == e_Tool.Erase then
 				Util.HorSpacer(3)
 			end
 		end
@@ -188,12 +190,12 @@ function UI.DrawArrange()
 		if reaper.ImGui_IsMouseDragging(App.ctx, 0) then
 			Editor.OnDrag()
 		end
-		
+
 		-- debug draw arrange mouse area
 		-- reaper.ImGui_DrawList_AddRect(draw_list, lane_start_x, App.arrange_win_y + App.top_margin - 5, lane_end_x + 1, App.arrange_win_y+App.top_margin - 5 + 11 + ((App.num_strings - 1) * App.lane_v_spacing), Colors.red)
 		
 		-- Mask rect
-		reaper.ImGui_DrawList_AddRectFilled(draw_list, App.arrange_win_x, App.arrange_win_y+2, App.arrange_win_x+App.left_margin, App.arrange_win_y+140, Colors.bg)
+		reaper.ImGui_DrawList_AddRectFilled(draw_list, App.arrange_win_x, App.arrange_win_y + 2, App.arrange_win_x + App.left_margin, App.arrange_win_y + 140, Colors.bg)
 		
 		-- String legends
 		for i = 0, App.num_strings - 1 do

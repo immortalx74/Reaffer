@@ -91,7 +91,7 @@ end
 
 function Util.GetCellNearestOccupied(cx, cy, direction)
 	local cur = App.num_grid_divisions
-
+	
 	if direction == e_Direction.Right then
 		for i, note in ipairs(App.note_list) do
 			if (cy == note.string_idx) and (note.offset > cx) then
@@ -101,5 +101,16 @@ function Util.GetCellNearestOccupied(cx, cy, direction)
 			end
 		end
 		return cur
+	end
+end
+
+function Util.CreateMIDI()
+	local track = reaper.GetSelectedTrack(0, 0)
+	local pos = reaper.GetCursorPositionEx(0)
+	local new_item = reaper.CreateNewMIDIItemInProj(track, 0, 5)
+	local take = reaper.GetActiveTake(new_item)
+	
+	for i, note in ipairs(App.note_list) do
+		reaper.MIDI_InsertNote(take, false, false, 0, 960, 0, note.pitch, note.velocity)
 	end
 end

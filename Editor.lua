@@ -11,17 +11,16 @@ function Editor.OnClick(cx, cy)
 			end
 			-- create new
 			local open_pitch = Util.NoteNameToPitch(App.instrument[App.num_strings - 3][App.num_strings - cy])
-			local new_note = {offset = cx, string_idx = cy, pitch = open_pitch, velocity = 127, duration = 1, selected = true}
+			local new_note = {offset = cx, string_idx = cy, pitch = open_pitch, pitch_last = open_pitch, velocity = 127, duration = 1, selected = true}
 			local idx = #App.note_list + 1
 			App.note_list[idx] = new_note
-			App.last_note_pitch = App.note_list[idx].pitch
 		else
-			-- deselect all except the clicked one
+			-- clicked existing note(s)
 			for i, note in ipairs(App.note_list) do
 				if (cx >= note.offset) and (cx < note.offset + note.duration) and (cy == note.string_idx) then
 					note.selected = true
-					App.last_note_pitch = note.pitch
-				else
+					note.pitch_last = note.pitch
+				elseif reaper.ImGui_GetKeyMods(App.ctx) ~= reaper.ImGui_KeyModFlags_Ctrl() then
 					note.selected = false
 				end
 			end
@@ -37,31 +36,36 @@ function Editor.OnRelease()
 	end
 end
 
+-- NOTE: need to switch from cell-based to mouse offset, for the dragging (pitch/duration) to work right.
+-- also, no need to have 2 loops. Can be implemented in first loop, since all notes are already visited
 function Editor.OnDrag()
 	if App.active_tool == e_Tool.Draw and App.editor_state == e_EditorState.EnterNote then
 		-- Get selected note idx
-		local sel_idx = 1
+		local selected_list = {}
 		for i, note in ipairs(App.note_list) do
 			if note.selected then
-				sel_idx = i
-				break
+				selected_list[#selected_list + 1] = i
 			end
 		end
 		
 		local cell_x = Util.GetCellX()
 		local cell_y = Util.GetCellY()
 		
-		-- duration
-		local nearest = Util.GetCellNearestOccupied(App.note_list[sel_idx].offset, App.note_list[sel_idx].string_idx, e_Direction.Right)
-		if cell_x >= App.note_list[sel_idx].offset then
-			App.note_list[sel_idx].duration = Util.Clamp(cell_x - App.note_list[sel_idx].offset + 1, 1, nearest - App.note_list[sel_idx].offset)
+		for i, sel_idx in ipairs(selected_list) do
+			if App.note_list[sel_idx].selected then
+				-- duration
+				local nearest = Util.GetCellNearestOccupied(App.note_list[sel_idx].offset, App.note_list[sel_idx].string_idx, e_Direction.Right)
+				if cell_x >= App.note_list[sel_idx].offset then
+					App.note_list[sel_idx].duration = Util.Clamp(cell_x - App.note_list[sel_idx].offset + 1, 1, nearest - App.note_list[sel_idx].offset)
+				end
+				
+				-- pitch
+				local pitch_min = Util.NoteNameToPitch(App.instrument[App.num_strings - 3][App.num_strings - App.note_list[sel_idx].string_idx])
+				local pitch_max = pitch_min + 24
+				
+				local diff = Util.Clamp(App.note_list[sel_idx].string_idx - cell_y, -(App.note_list[sel_idx].pitch_last - pitch_min), pitch_max - App.note_list[sel_idx].pitch_last)
+				App.note_list[sel_idx].pitch = App.note_list[sel_idx].pitch_last + diff
+			end
 		end
-		
-		-- pitch
-		local pitch_min = Util.NoteNameToPitch(App.instrument[App.num_strings - 3][App.num_strings - App.note_list[sel_idx].string_idx])
-		local pitch_max = pitch_min + 24
-		
-		local diff = Util.Clamp(App.note_list[sel_idx].string_idx - cell_y, -(App.last_note_pitch - pitch_min), pitch_max - App.last_note_pitch)
-		App.note_list[sel_idx].pitch = App.last_note_pitch + diff
 	end
 end

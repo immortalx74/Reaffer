@@ -74,8 +74,11 @@ App =
 	
 	note_list =
 	{
-		-- {offset = 6, string_idx = 2, pitch = 25, velocity = 127, duration = 1, selected = false},
-		-- {offset = 10, string_idx = 4, pitch = 40, velocity = 24, duration = 3, selected = false}
+		-- {offset = 6, string_idx = 2, pitch = 25, pitch_last = 25, velocity = 127, duration = 1, selected = false},
+	},
+	note_list_selected = 
+	{
+		-- {idx = ?, last_pitch = ?}
 	}
 }
 
@@ -83,7 +86,7 @@ function App.Init()
 	local script_path = debug.getinfo(1).source:match("@?(.*[\\|/])")
 	App.ctx = reaper.ImGui_CreateContext('Riffer script')
 	App.icon_font = reaper.ImGui_CreateFont(script_path .. "icons.ttf", 14)
-	reaper.ImGui_AttachFont(App.ctx, App.icon_font)	
+	reaper.ImGui_AttachFont(App.ctx, App.icon_font)
 	Colors.text = reaper.ImGui_GetStyleColor(App.ctx, reaper.ImGui_Col_Text())
 	App.window_indent = reaper.ImGui_StyleVar_IndentSpacing()
 	App.window_w = reaper.ImGui_GetWindowWidth(App.ctx)
@@ -104,7 +107,7 @@ function App.Loop()
 		UI.DrawTXT_Help()
 		Util.HorSpacer(3)
 		if reaper.ImGui_Button(App.ctx, "Debug...") then
-			msg("ppp")
+			msg(#App.note_list_selected)
 		end
 		UI.DrawArrange()
 		UI.DrawToolbar()
