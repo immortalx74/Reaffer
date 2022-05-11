@@ -11,12 +11,10 @@ App =
 	mouse_y,
 	mouse_prev_x,
 	mouse_prev_y,
-	drag_x = 0,
-	drag_y = 0,
 	scroll_x = 0,
 	arrange_win_x = 0,
 	arrange_win_y = 0,
-	last_note_pitch = 0,
+	can_init_drag = false,
 	
 	-- metrics
 	window_w = 800,
@@ -27,6 +25,7 @@ App =
 	cb_signature_w = 76,
 	cb_quantize_w = 58,
 	si_measures_w = 140,
+	cb_note_sisplay_w = 96,
 	arrange_h = 160,
 	grid_w = 34,
 	left_margin = 50,
@@ -42,9 +41,12 @@ App =
 	num_measures = 4,
 	quantize_cur_idx = 3,
 	signature_cur_idx = 3,
+	note_display_cur_idx = 1,
 	
 	-- data
 	quantize = {"1/1", "1/2", "1/4", "1/8", "1/16", "1/32", "1/64"},
+	
+	note_display = {"Pitch", "Fret", "Pitch&Fret", "Velocity"},
 	
 	signature = {
 		{caption = "2/4", beats = 2, subs = 4},
@@ -62,23 +64,24 @@ App =
 	
 	instrument =
 	{
-		{num_strings = 4, "E1", "A1", "D2", "G2"},
-		{num_strings = 5, "B0", "E1", "A1", "D2", "G2"},
-		{num_strings = 6, "E2", "A2", "D3", "G3", "B3", "E4"},
-		{num_strings = 7, "B1", "E2", "A2", "D3", "G3", "B3", "E4"},
-		{num_strings = 8, "F#1", "B1", "E2", "A2", "D3", "G3", "B3", "E4"},
-		{num_strings = 9, "C#1", "F#1", "B1", "E2", "A2", "D3", "G3", "B3", "E4"}
+		{num_strings = 4, open = {28, 33, 38, 43}, "E1", "A1", "D2", "G2"},
+		{num_strings = 5, open = {23, 28, 33, 38, 43}, "B0", "E1", "A1", "D2", "G2"},
+		{num_strings = 6, open = {40, 45, 50, 55, 59, 64}, "E2", "A2", "D3", "G3", "B3", "E4"},
+		{num_strings = 7, open = {35, 40, 45, 50, 55, 59, 64}, "B1", "E2", "A2", "D3", "G3", "B3", "E4"},
+		{num_strings = 8, open = {30, 35, 40, 45, 50, 55, 59, 64}, "F#1", "B1", "E2", "A2", "D3", "G3", "B3", "E4"},
+		{num_strings = 9, open = {25, 30, 35, 40, 45, 50, 55, 59, 64}, "C#1", "F#1", "B1", "E2", "A2", "D3", "G3", "B3", "E4"}
 	},
 	
 	note_sequence = {"C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"},
 	
 	note_list =
 	{
-		-- {offset = 6, string_idx = 2, pitch = 25, pitch_last = 25, velocity = 127, duration = 1, selected = false},
+		-- {offset = 6, string_idx = 2, pitch = 25, velocity = 127, duration = 1, selected = false},
 	},
-	note_list_selected = 
+	
+	last_clicked = 
 	{
-		-- {idx = ?, last_pitch = ?}
+		-- store all properties of last clicked note here...
 	}
 }
 
@@ -104,10 +107,13 @@ function App.Loop()
 		UI.DrawCB_Signature()
 		UI.DrawCB_Quantize()
 		UI.DrawSI_Measures()
+		UI.DrawCBNoteDisplay()
 		UI.DrawTXT_Help()
 		Util.HorSpacer(3)
 		if reaper.ImGui_Button(App.ctx, "Debug...") then
-			msg(#App.note_list_selected)
+			if App.last_clicked[1] ~= nil then
+				msg(tostring(App.last_clicked[1].idx) .. "\n")
+			end
 		end
 		UI.DrawArrange()
 		UI.DrawToolbar()

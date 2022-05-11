@@ -3,16 +3,27 @@ UI = {}
 function UI.DrawNotes(draw_list)
 	local note_x
 	local note_y
-	local selected
+	local str
 	
 	for i, note in ipairs(App.note_list) do
 		if note.string_idx < App.num_strings then -- When switching from higher string count instrument to a lower one, notes are kept but hidden
 			note_x = App.arrange_win_x + 50 + (note.offset * App.note_w) - App.scroll_x
 			note_y = App.arrange_win_y + 30 + (note.string_idx * App.note_h) - 5
-			selected = note.selected
+			
 			reaper.ImGui_DrawList_AddRectFilled(draw_list, note_x, note_y, note_x + (App.note_w * note.duration) -1, note_y + App.note_h-1, Util.VelocityColor(note.velocity), 6)
-			reaper.ImGui_DrawList_AddText(draw_list, note_x + 5, note_y - 2, Colors.text, Util.NotePitchToName(note.pitch))
-			if selected then
+			if App.note_display_cur_idx == 1 then -- display pitch
+				str = Util.NotePitchToName(note.pitch)
+			elseif App.note_display_cur_idx == 2 then -- display fret
+				str = Util.NotePitchToFret(note.pitch, note.string_idx)
+			elseif App.note_display_cur_idx == 3 then -- display pitch + fret. Only if duration > 1. If duration == 1, just display the pitch
+				str = Util.NotePitchToName(note.pitch)
+				if note.duration > 1 then str = str .. "," .. Util.NotePitchToFret(note.pitch, note.string_idx); end
+			elseif App.note_display_cur_idx == 4 then -- display velocity
+				str = note.velocity
+			end
+			reaper.ImGui_DrawList_AddText(draw_list, note_x + 5, note_y - 2, Colors.text, str)
+			
+			if note.selected then
 				reaper.ImGui_DrawList_AddRect(draw_list, note_x, note_y, note_x + (App.note_w * note.duration) -1, note_y + App.note_h-1, Colors.text, 40, reaper.ImGui_DrawFlags_None(), 1)
 			end
 		end
@@ -57,6 +68,17 @@ function UI.DrawSI_Measures()
 	reaper.ImGui_SetNextItemWidth(App.ctx, App.si_measures_w)
 	local ret, val = reaper.ImGui_SliderInt(App.ctx, "Measures##si_measures", App.num_measures, 1, 64)
 	App.num_measures = val
+end
+
+function UI.DrawCBNoteDisplay()
+	Util.HorSpacer(3)
+	reaper.ImGui_SetNextItemWidth(App.ctx, App.cb_note_sisplay_w)
+	if reaper.ImGui_BeginCombo(App.ctx, "Note Display##cb_note_display", App.note_display[App.note_display_cur_idx]) then
+		for i = 1, 4 do
+			if reaper.ImGui_Selectable(App.ctx, App.note_display[i], App.note_display_cur_idx == i) then App.note_display_cur_idx = i; end
+		end
+		reaper.ImGui_EndCombo(App.ctx)
+	end
 end
 
 function UI.DrawTXT_Help()
@@ -170,13 +192,14 @@ function UI.DrawArrange()
 			local cell_x = Util.GetCellX()
 			local cell_y = Util.GetCellY()
 			
-			if App.mouse_x > rect_x1 and App.mouse_x < rect_x2  and App.mouse_y > rect_y1 and App.mouse_y < rect_y2  then	
+			if App.mouse_x > rect_x1 and App.mouse_x < rect_x2  and App.mouse_y > rect_y1 and App.mouse_y < rect_y2  then
 				if Util.IsCellEmpty(cell_x, cell_y, true) then
 					local preview_x = App.arrange_win_x + App.left_margin + (cell_x * App.note_w) - App.scroll_x
 					local preview_y = App.arrange_win_y + App.top_margin + (cell_y * App.note_h) - 5
 					reaper.ImGui_DrawList_AddRectFilled(draw_list, preview_x, preview_y, preview_x + App.note_w - 1, preview_y + App.note_h - 1, Colors.note_preview, 40)
 				end
 				if reaper.ImGui_IsMouseClicked(App.ctx, 0) then
+					App.can_init_drag = true
 					Editor.OnClick(cell_x, cell_y)
 				end
 			end
@@ -187,10 +210,14 @@ function UI.DrawArrange()
 			Editor.OnRelease()
 		end
 		
-		if reaper.ImGui_IsMouseDragging(App.ctx, 0) then
+		if reaper.ImGui_IsMouseDragging(App.ctx, 0) and App.can_init_drag then
 			Editor.OnDrag()
 		end
-
+		
+		if reaper.ImGui_IsMouseDragging(App.ctx, 1) then
+			Editor.OnDrag2()
+		end
+		
 		-- debug draw arrange mouse area
 		-- reaper.ImGui_DrawList_AddRect(draw_list, lane_start_x, App.arrange_win_y + App.top_margin - 5, lane_end_x + 1, App.arrange_win_y+App.top_margin - 5 + 11 + ((App.num_strings - 1) * App.lane_v_spacing), Colors.red)
 		

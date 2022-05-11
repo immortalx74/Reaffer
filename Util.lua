@@ -68,12 +68,30 @@ function Util.NoteNameToPitch(note_name)
 	return (base + idx - 1) + (oct * 12)
 end
 
+function Util.NotePitchToFret(pitch, string_idx)
+	local open = App.instrument[App.num_strings - 3].open[App.num_strings - string_idx]
+	return math.floor(pitch - open)
+end
+
 function Util.GetCellX()
 	return math.floor((App.mouse_x - App.arrange_win_x + App.scroll_x -15) / App.note_w) - 1
 end
 
 function Util.GetCellY()
 	return math.floor((App.mouse_y - App.arrange_win_y - App.top_margin + 5) / App.note_h)
+end
+
+-- TODO Select/Deselect: Should take into account hidden notes?
+function Util.DeselectAll()
+	for i, n in ipairs(App.note_list) do
+		n.selected = false
+	end
+end
+
+function Util.SelectAll()
+	for i, n in ipairs(App.note_list) do
+		n.selected = true
+	end
 end
 
 function Util.IsCellEmpty(cx, cy, duration_inclusive)
@@ -89,6 +107,7 @@ function Util.IsCellEmpty(cx, cy, duration_inclusive)
 	return true
 end
 
+-- TODO Need to do Left direction too. (Or not?)
 function Util.GetCellNearestOccupied(cx, cy, direction)
 	local cur = App.num_grid_divisions
 	

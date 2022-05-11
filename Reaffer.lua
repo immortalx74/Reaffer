@@ -20,6 +20,8 @@
 -- Hard to explain in words...
 --
 -- Allow Select All shortcut
+--
+-- Provide option for note display: Fret, Pitch, Fret&Pitch, Velocity, Off-Velocity
 
 function msg(txt)
 	reaper.ShowConsoleMsg(txt)
@@ -29,8 +31,8 @@ local script_path = debug.getinfo(1).source:match("@?(.*[\\|/])")
 dofile(script_path .. "Constants.lua")
 dofile(script_path .. "App.lua")
 dofile(script_path .. "UI.lua")
-dofile(script_path .. "Util.lua")
 dofile(script_path .. "Toolbar.lua")
+dofile(script_path .. "Util.lua")
 dofile(script_path .. "Editor.lua")
 
 App.Init()

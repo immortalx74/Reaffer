@@ -5,10 +5,7 @@ e_EditorState =
 	DrawReady = 3,
 	EraseReady = 4,
 	EnterNote = 5,
-	PitchCurrent = 6,
-	PitchExisting = 7,
-	ResizeCurrent = 8,
-	ResizeExisting = 9
+	SelectNotes = 6
 }
 
 e_Tool = 
