@@ -28,10 +28,13 @@ function Editor.OnClick(cx, cy)
 			Util.DeselectAll()
 			-- create new
 			local open_pitch = App.instrument[App.num_strings - 3].open[App.num_strings - cy]
-			local new_note = {offset = cx, string_idx = cy, pitch = open_pitch, velocity = 127, duration = 1, selected = true}
 			local idx = #App.note_list + 1
+			
+			local new_note = {idx = idx, offset = cx, string_idx = cy, pitch = open_pitch, velocity = 127, duration = 1, selected = true}
 			App.note_list[idx] = new_note
-			App.last_clicked[1] = {idx = idx, offset = cx, string_idx = cy, pitch = open_pitch, velocity = 127, duration = 1, selected = true}
+			
+			App.last_clicked = new_note
+			UR.PushUndo(e_OpType.Enter, {new_note})
 		end
 		if App.active_tool == e_Tool.Select or App.active_tool == e_Tool.Move then
 			Util.DeselectAll()

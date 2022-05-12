@@ -15,15 +15,24 @@ e_Tool =
 	Move = 3,
 	Draw = 4,
 	Erase = 5,
-	Cut = 6,
-	Copy = 7,
-	Paste = 8
+	Undo = 6,
+	Redo = 7,
+	Cut = 8,
+	Copy = 9,
+	Paste = 10
 }
 
 e_Direction = 
 {
 	Left = 1,
 	Right = 2
+}
+
+e_OpType = 
+{
+	Enter = 1,
+	Delete = 2,
+	-- more here...
 }
 
 Colors = 

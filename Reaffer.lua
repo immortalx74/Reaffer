@@ -10,7 +10,7 @@
 --
 -- Allow multiple selection with marquee. Don't mimic riffer exact behavior.
 -- Use Select tool and click&drag on any empty area on arrange box.
--- "base" note is the leftmost one.
+-- "base" note is the last clicked note.
 --
 -- Implement Undo system. Shouldn't affect selection. Just clear selection if a deleted note was selected.
 --
@@ -24,7 +24,7 @@
 -- Provide option for note display: Fret, Pitch, Fret&Pitch, Velocity, Off-Velocity
 
 function msg(txt)
-	reaper.ShowConsoleMsg(txt)
+	reaper.ShowConsoleMsg(tostring(txt))
 end
 
 local script_path = debug.getinfo(1).source:match("@?(.*[\\|/])")
@@ -34,6 +34,7 @@ dofile(script_path .. "UI.lua")
 dofile(script_path .. "Toolbar.lua")
 dofile(script_path .. "Util.lua")
 dofile(script_path .. "Editor.lua")
+dofile(script_path .. "UndoRedo.lua")
 
 App.Init()
 reaper.defer(App.Loop)

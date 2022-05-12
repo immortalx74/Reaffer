@@ -97,7 +97,7 @@ end
 function UI.DrawToolbar()
 	if reaper.ImGui_BeginChild(App.ctx, "Toolbar##win_toolbar", App.window_w, 20, false, reaper.ImGui_WindowFlags_NoScrollbar()) then
 		reaper.ImGui_PushStyleColor(App.ctx, reaper.ImGui_Col_Button(), Colors.bg)
-		for i = 1, 8 do
+		for i = 1, 10 do
 			reaper.ImGui_PushFont(App.ctx, App.icon_font)
 			
 			if i == App.active_tool then
@@ -106,10 +106,14 @@ function UI.DrawToolbar()
 				reaper.ImGui_PushStyleColor(App.ctx, reaper.ImGui_Col_Text(), Colors.text)
 			end
 			if reaper.ImGui_Button(App.ctx, ToolBar[i].icon .. "##toolbar_button" .. i) then
-				if i >= e_Tool.Select and i <= e_Tool.Erase then -- only the note tools can be active
+				if i >= e_Tool.Select and i <= e_Tool.Erase then -- only the note editing tools can be active
 					App.active_tool = i
 				elseif i == e_Tool.Create then
 					Util.CreateMIDI()
+				elseif i == e_Tool.Undo then
+					UR.PopUndo()
+				elseif i == e_Tool.Redo then
+					UR.PopRedo()
 				end
 			end
 			reaper.ImGui_PopStyleColor(App.ctx)
@@ -141,7 +145,7 @@ function UI.DrawArrange()
 		App.scroll_x = reaper.ImGui_GetScrollX(App.ctx)
 		App.arrange_win_x, App.arrange_win_y = reaper.ImGui_GetWindowPos(App.ctx)
 		
-		-- Scroll horizontally with mousewheel
+		-- Scroll horizontally with mousewheel without holding SHIFT
 		local mw = reaper.ImGui_GetMouseWheel(App.ctx)
 		App.scroll_x = App.scroll_x - mw * App.wheel_delta
 		reaper.ImGui_SetScrollX(App.ctx, App.scroll_x)
@@ -182,7 +186,7 @@ function UI.DrawArrange()
 		-- Notes
 		UI.DrawNotes(draw_list)
 		
-		-- Enter notes...
+		-- Capture the bountaries of arrange area and display note preview
 		local rect_x1 = App.arrange_win_x + App.left_margin
 		local rect_y1 = App.arrange_win_y + App.top_margin - 5
 		local rect_x2 = lane_end_x - 1

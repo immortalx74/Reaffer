@@ -76,12 +76,12 @@ App =
 	
 	note_list =
 	{
-		-- {offset = 6, string_idx = 2, pitch = 25, velocity = 127, duration = 1, selected = false},
+		-- {idx = 1, offset = 6, string_idx = 2, pitch = 25, velocity = 127, duration = 1, selected = false},
 	},
 	
 	last_clicked = 
 	{
-		-- store all properties of last clicked note here...
+		-- store the whole clicked note here...
 	}
 }
 
@@ -103,6 +103,11 @@ function App.Loop()
 	if App.is_visible then
 		App.mouse_x, App.mouse_y = reaper.ImGui_GetMousePos(App.ctx)
 		App.window_w = reaper.ImGui_GetWindowWidth(App.ctx)
+
+		if (reaper.ImGui_IsKeyDown(App.ctx, reaper.ImGui_Key_ModCtrl())) and (reaper.ImGui_IsKeyPressed(App.ctx, reaper.ImGui_Key_Z())) then
+			-- Undo.Pop()
+		end
+
 		UI.DrawCB_Strings()
 		UI.DrawCB_Signature()
 		UI.DrawCB_Quantize()
@@ -111,9 +116,9 @@ function App.Loop()
 		UI.DrawTXT_Help()
 		Util.HorSpacer(3)
 		if reaper.ImGui_Button(App.ctx, "Debug...") then
-			if App.last_clicked[1] ~= nil then
-				msg(tostring(App.last_clicked[1].idx) .. "\n")
-			end
+			-- msg(Undo[1].note_list[1].pitch .. "\n")
+			-- msg(Undo[2].note_list[1].pitch .. "\n")
+			Undo.Pop()
 		end
 		UI.DrawArrange()
 		UI.DrawToolbar()
