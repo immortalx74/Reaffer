@@ -23,7 +23,7 @@ function UI.DrawNotes(draw_list)
 			end
 			reaper.ImGui_DrawList_AddText(draw_list, note_x + 5, note_y - 2, Colors.text, str)
 			
-			if note.selected then
+			if Util.IsNoteSelected(note) then
 				reaper.ImGui_DrawList_AddRect(draw_list, note_x, note_y, note_x + (App.note_w * note.duration) -1, note_y + App.note_h-1, Colors.text, 40, reaper.ImGui_DrawFlags_None(), 1)
 			end
 		end
@@ -203,23 +203,29 @@ function UI.DrawArrange()
 					reaper.ImGui_DrawList_AddRectFilled(draw_list, preview_x, preview_y, preview_x + App.note_w - 1, preview_y + App.note_h - 1, Colors.note_preview, 40)
 				end
 				if reaper.ImGui_IsMouseClicked(App.ctx, 0) then
-					App.can_init_drag = true
-					Editor.OnClick(cell_x, cell_y)
+					Editor.OnMouseButtonClick(e_MouseButton.Left, cell_x, cell_y)
+				end
+				if reaper.ImGui_IsMouseClicked(App.ctx, 1) then
+					Editor.OnMouseButtonClick(e_MouseButton.Right, cell_x, cell_y)
 				end
 			end
 		end
 		
 		-- These have prob have to go out of the drawing function
 		if reaper.ImGui_IsMouseReleased(App.ctx, 0) then
-			Editor.OnRelease()
+			Editor.OnMouseButtonRelease(e_MouseButton.Left)
+		end
+
+		if reaper.ImGui_IsMouseReleased(App.ctx, 1) then
+			Editor.OnMouseButtonRelease(e_MouseButton.Right)
 		end
 		
-		if reaper.ImGui_IsMouseDragging(App.ctx, 0) and App.can_init_drag then
-			Editor.OnDrag()
+		if reaper.ImGui_IsMouseDragging(App.ctx, 0) then
+			Editor.OnMouseButtonDrag(e_MouseButton.Left)
 		end
 		
 		if reaper.ImGui_IsMouseDragging(App.ctx, 1) then
-			Editor.OnDrag2()
+			Editor.OnMouseButtonDrag(e_MouseButton.Right)
 		end
 		
 		-- debug draw arrange mouse area

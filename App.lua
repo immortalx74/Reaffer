@@ -76,13 +76,15 @@ App =
 	
 	note_list =
 	{
-		-- {idx = 1, offset = 6, string_idx = 2, pitch = 25, velocity = 127, duration = 1, selected = false},
+		-- {idx = 1, offset = 6, string_idx = 2, pitch = 25, velocity = 127, duration = 1},
 	},
 	
-	last_clicked = 
+	last_note_clicked = 
 	{
 		-- store the whole clicked note here...
-	}
+	},
+
+	note_list_selected = {}
 }
 
 function App.Init()
@@ -93,7 +95,6 @@ function App.Init()
 	Colors.text = reaper.ImGui_GetStyleColor(App.ctx, reaper.ImGui_Col_Text())
 	App.window_indent = reaper.ImGui_StyleVar_IndentSpacing()
 	App.window_w = reaper.ImGui_GetWindowWidth(App.ctx)
-	App.editor_state = e_EditorState.SelectReady
 	App.active_tool = e_Tool.Select
 end
 

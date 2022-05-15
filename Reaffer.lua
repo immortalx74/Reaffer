@@ -24,7 +24,7 @@
 -- Provide option for note display: Fret, Pitch, Fret&Pitch, Velocity, Off-Velocity
 
 function msg(txt)
-	reaper.ShowConsoleMsg(tostring(txt))
+	reaper.ShowConsoleMsg(tostring(txt) .. "\n")
 end
 
 local script_path = debug.getinfo(1).source:match("@?(.*[\\|/])")

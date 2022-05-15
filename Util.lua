@@ -81,19 +81,6 @@ function Util.GetCellY()
 	return math.floor((App.mouse_y - App.arrange_win_y - App.top_margin + 5) / App.note_h)
 end
 
--- TODO Select/Deselect: Should take into account hidden notes?
-function Util.DeselectAll()
-	for i, n in ipairs(App.note_list) do
-		n.selected = false
-	end
-end
-
-function Util.SelectAll()
-	for i, n in ipairs(App.note_list) do
-		n.selected = true
-	end
-end
-
 function Util.IsCellEmpty(cx, cy, duration_inclusive)
 	for i, note in ipairs(App.note_list) do
 		local start_x = note.offset
@@ -131,5 +118,55 @@ function Util.CreateMIDI()
 	
 	for i, note in ipairs(App.note_list) do
 		reaper.MIDI_InsertNote(take, false, false, 0, 960, 0, note.pitch, note.velocity)
+	end
+end
+
+function Util.CopyNote(note)
+	local t = {idx = note.idx, offset = note.offset, string_idx = note.string_idx, pitch = note.pitch, velocity = note.velocity, duration = note.duration}
+	return t
+end
+
+function Util.ClearTable(t)
+	for i, v in ipairs(t) do
+		t[i] = nil
+	end
+end
+
+function Util.IsNoteSelected(note)
+	local idx = note.idx
+	
+	for i, v in ipairs(App.note_list_selected) do
+		if v.idx == idx then
+			return true
+		end
+	end 
+	
+	return false
+end
+
+function Util.IsNoteAtCellSelected(cx, cy)
+	for i, v in ipairs(App.note_list_selected) do
+		if (cx >= v.offset) and (cx < v.offset + v.duration) and (cy == v.string_idx) then
+			return true
+		end
+	end
+	
+	return false
+end
+
+function Util.GetNoteIndexAtCell(cx, cy)
+	for i, v in ipairs(App.note_list) do
+		if (cx >= v.offset) and (cx < v.offset + v.duration) and (cy == v.string_idx) then
+			return i
+		end
+	end
+
+	return 0 -- Not found
+end
+
+function Util.UpdateSelectedNotes()
+	if #App.note_list == 0 or #App.note_list_selected == 0 then return; end
+	for i, v in ipairs(App.note_list_selected) do
+		App.note_list_selected[i] = Util.CopyNote(App.note_list[App.note_list_selected[i].idx])
 	end
 end

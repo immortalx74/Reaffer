@@ -1,13 +1,3 @@
-e_EditorState =
-{
-	SelectReady = 1,
-	MoveReady = 2,
-	DrawReady = 3,
-	EraseReady = 4,
-	EnterNote = 5,
-	SelectNotes = 6
-}
-
 e_Tool = 
 {
 	Create = 1,
@@ -26,6 +16,13 @@ e_Direction =
 {
 	Left = 1,
 	Right = 2
+}
+
+e_MouseButton = 
+{
+	Left = 1,
+	Right = 2,
+	Middle = 3
 }
 
 e_OpType = 
