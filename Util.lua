@@ -184,3 +184,10 @@ function Util.UpdateSelectedNotes()
 		App.note_list_selected[i] = Util.CopyNote(App.note_list[App.note_list_selected[i].idx])
 	end
 end
+
+function Util.RecalculateStoredNoteIndices()
+	if #App.note_list == 0 then return; end
+	for i, v in ipairs(App.note_list) do
+		v.idx = i
+	end
+end

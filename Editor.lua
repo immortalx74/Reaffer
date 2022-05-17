@@ -59,7 +59,6 @@ function Editor.OnMouseButtonRelease(mbutton)
 		App.last_note_clicked[1] = nil
 		Util.UpdateSelectedNotes()
 	end
-	msg(#App.note_list_selected)
 end
 
 function Editor.OnMouseButtonDrag(mbutton)
@@ -106,6 +105,7 @@ function Editor.EraseNotes(cx, cy)
 		table.remove(App.note_list, idx)
 	end
 
+	Util.RecalculateStoredNoteIndices()
 	Util.ClearTable(App.note_list_selected)
 end
 
