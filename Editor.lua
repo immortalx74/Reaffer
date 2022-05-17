@@ -90,7 +90,7 @@ function Editor.InsertNote(cx, cy)
 	App.last_note_clicked[1] = Util.CopyNote(new_note)
 	App.current_pitch = App.last_note_clicked[1].pitch
 	Editor.PlayNote()
-	-- do push undo here
+	-- push undo here
 end
 
 function Editor.EraseNotes(cx, cy)

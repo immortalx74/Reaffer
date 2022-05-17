@@ -9,8 +9,7 @@ function Util.HorSpacer(num_spacers)
 end
 
 function Util.NumGridDivisions()
-	App.num_grid_divisions = App.num_measures * App.signature[App.signature_cur_idx].beats * App.signature[App.signature_cur_idx].subs
-	return App.num_grid_divisions
+	return (App.num_measures * App.signature[App.signature_cur_idx].beats * App.signature[App.signature_cur_idx].subs)
 end
 
 function Util.Clamp(n, n_min, n_max)
@@ -74,11 +73,11 @@ function Util.NotePitchToFret(pitch, string_idx)
 end
 
 function Util.GetCellX()
-	return math.floor((App.mouse_x - App.arrange_win_x + App.scroll_x -15) / App.note_w) - 1
+	return math.floor((App.mouse_x - App.editor_win_x + App.scroll_x -15) / App.note_w) - 1
 end
 
 function Util.GetCellY()
-	return math.floor((App.mouse_y - App.arrange_win_y - App.top_margin + 5) / App.note_h)
+	return math.floor((App.mouse_y - App.editor_win_y - App.top_margin + 5) / App.note_h)
 end
 
 function Util.IsCellEmpty(cx, cy, duration_inclusive)
@@ -96,7 +95,7 @@ end
 
 -- TODO Need to do Left direction too. (Or not?)
 function Util.GetCellNearestOccupied(cx, cy, direction)
-	local cur = App.num_grid_divisions
+	local cur = Util.NumGridDivisions()
 	
 	if direction == e_Direction.Right then
 		for i, note in ipairs(App.note_list) do

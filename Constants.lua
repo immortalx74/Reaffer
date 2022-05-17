@@ -27,7 +27,7 @@ e_MouseButton =
 
 e_OpType = 
 {
-	Enter = 1,
+	Insert = 1,
 	Delete = 2,
 	-- more here...
 }

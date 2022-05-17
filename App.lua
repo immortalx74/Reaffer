@@ -12,8 +12,8 @@ App =
 	mouse_prev_x,
 	mouse_prev_y,
 	scroll_x = 0,
-	arrange_win_x = 0,
-	arrange_win_y = 0,
+	editor_win_x = 0,
+	editor_win_y = 0,
 	can_init_drag = false,
 	current_pitch = 0,
 	
@@ -27,7 +27,7 @@ App =
 	cb_quantize_w = 58,
 	si_measures_w = 140,
 	cb_note_sisplay_w = 96,
-	arrange_h = 160,
+	editor_h = 160,
 	grid_w = 34,
 	left_margin = 50,
 	top_margin = 30,
@@ -37,7 +37,6 @@ App =
 	-- defaults
 	wheel_delta = 50,
 	active_tool,
-	num_grid_divisions,
 	num_strings = 6,
 	num_measures = 4,
 	quantize_cur_idx = 5,
@@ -105,24 +104,19 @@ function App.Loop()
 	if App.is_visible then
 		App.mouse_x, App.mouse_y = reaper.ImGui_GetMousePos(App.ctx)
 		App.window_w = reaper.ImGui_GetWindowWidth(App.ctx)
-		
-		if (reaper.ImGui_IsKeyDown(App.ctx, reaper.ImGui_Key_ModCtrl())) and (reaper.ImGui_IsKeyPressed(App.ctx, reaper.ImGui_Key_Z())) then
-			-- Undo.Pop()
-		end
-		
-		UI.DrawCB_Strings()
-		UI.DrawCB_Signature()
-		UI.DrawCB_Quantize()
-		UI.DrawSI_Measures()
-		UI.DrawCBNoteDisplay()
-		UI.DrawTXT_Help()
+
+		UI.Render_CB_Strings()
+		UI.Render_CB_Signature()
+		UI.Render_CB_Quantize()
+		UI.Render_SI_Measures()
+		UI.Render_CB_NoteDisplay()
+		UI.Render_TXT_Help()
 		Util.HorSpacer(3)
 		if reaper.ImGui_Button(App.ctx, "Debug...") then
-			send_note_ons()
-			wait_for_note_offs()
+			--
 		end
-		UI.DrawArrange()
-		UI.DrawToolbar()
+		UI.Render_Editor()
+		UI.Render_Toolbar()
 		
 		App.mouse_prev_x, App.mouse_prev_y = App.mouse_x, App.mouse_y
 		reaper.ImGui_End(App.ctx)	

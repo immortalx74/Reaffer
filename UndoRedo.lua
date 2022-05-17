@@ -18,7 +18,7 @@ function UR.PopUndo()
 	local type = last_rec.type
 	
 	-- do op
-	if type == e_OpType.Enter then
+	if type == e_OpType.Insert then
 		for i, v in ipairs(last_rec.note_list) do
 			table.remove(App.note_list, v.idx)
 		end
@@ -39,7 +39,7 @@ function UR.PopRedo()
 	local last_rec = UR.redo_stack[#UR.redo_stack]
 	local type = last_rec.type
 	
-	if type == e_OpType.Enter then
+	if type == e_OpType.Insert then
 		for i, v in ipairs(last_rec.note_list) do
 			-- NOTE restoring notes to their original idx (slow). Could restore them to the end of the table. Needs thinking.
 			table.insert(App.note_list, v.idx, v)

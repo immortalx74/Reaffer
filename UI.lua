@@ -1,14 +1,14 @@
 UI = {}
 
-function UI.DrawNotes(draw_list)
+function UI.Render_Notes(draw_list)
 	local note_x
 	local note_y
 	local str
 	
 	for i, note in ipairs(App.note_list) do
 		if note.string_idx < App.num_strings then -- When switching from higher string count instrument to a lower one, notes are kept but hidden
-			note_x = App.arrange_win_x + 50 + (note.offset * App.note_w) - App.scroll_x
-			note_y = App.arrange_win_y + 30 + (note.string_idx * App.note_h) - 5
+			note_x = App.editor_win_x + 50 + (note.offset * App.note_w) - App.scroll_x
+			note_y = App.editor_win_y + 30 + (note.string_idx * App.note_h) - 5
 			
 			reaper.ImGui_DrawList_AddRectFilled(draw_list, note_x, note_y, note_x + (App.note_w * note.duration) -1, note_y + App.note_h-1, Util.VelocityColor(note.velocity), 6)
 			if App.note_display_cur_idx == 1 then -- display pitch
@@ -30,7 +30,7 @@ function UI.DrawNotes(draw_list)
 	end
 end
 
-function UI.DrawCB_Strings()
+function UI.Render_CB_Strings()
 	reaper.ImGui_SetNextItemWidth(App.ctx, App.cb_strings_w)
 	
 	if reaper.ImGui_BeginCombo(App.ctx, "Strings##cb_strings", App.num_strings) then
@@ -41,7 +41,7 @@ function UI.DrawCB_Strings()
 	end
 end
 
-function UI.DrawCB_Signature()
+function UI.Render_CB_Signature()
 	Util.HorSpacer(3)
 	reaper.ImGui_SetNextItemWidth(App.ctx, App.cb_signature_w)
 	if reaper.ImGui_BeginCombo(App.ctx, "Signature##cb_signature", App.signature[App.signature_cur_idx].caption, reaper.ImGui_ComboFlags_HeightLarge()) then
@@ -52,7 +52,7 @@ function UI.DrawCB_Signature()
 	end
 end
 
-function UI.DrawCB_Quantize()
+function UI.Render_CB_Quantize()
 	Util.HorSpacer(3)
 	reaper.ImGui_SetNextItemWidth(App.ctx, App.cb_quantize_w)
 	if reaper.ImGui_BeginCombo(App.ctx, "Quantize##cb_quantize", App.quantize[App.quantize_cur_idx]) then
@@ -63,14 +63,14 @@ function UI.DrawCB_Quantize()
 	end
 end
 
-function UI.DrawSI_Measures()
+function UI.Render_SI_Measures()
 	Util.HorSpacer(3)
 	reaper.ImGui_SetNextItemWidth(App.ctx, App.si_measures_w)
 	local ret, val = reaper.ImGui_SliderInt(App.ctx, "Measures##si_measures", App.num_measures, 1, 64)
 	App.num_measures = val
 end
 
-function UI.DrawCBNoteDisplay()
+function UI.Render_CB_NoteDisplay()
 	Util.HorSpacer(3)
 	reaper.ImGui_SetNextItemWidth(App.ctx, App.cb_note_sisplay_w)
 	if reaper.ImGui_BeginCombo(App.ctx, "Note Display##cb_note_display", App.note_display[App.note_display_cur_idx]) then
@@ -81,7 +81,7 @@ function UI.DrawCBNoteDisplay()
 	end
 end
 
-function UI.DrawTXT_Help()
+function UI.Render_TXT_Help()
 	Util.HorSpacer(3)
 	reaper.ImGui_TextDisabled(App.ctx, "(?)")
 	
@@ -94,7 +94,7 @@ function UI.DrawTXT_Help()
 	end
 end
 
-function UI.DrawToolbar()
+function UI.Render_Toolbar()
 	if reaper.ImGui_BeginChild(App.ctx, "Toolbar##win_toolbar", App.window_w, 20, false, reaper.ImGui_WindowFlags_NoScrollbar()) then
 		reaper.ImGui_PushStyleColor(App.ctx, reaper.ImGui_Col_Button(), Colors.bg)
 		for i = 1, 10 do
@@ -135,15 +135,16 @@ function UI.DrawToolbar()
 	end
 end
 
-function UI.DrawArrange()
-	App.arrange_h = 50 + ((App.num_strings) * 12)
-	local lane_w = Util.NumGridDivisions() * App.grid_w
-	reaper.ImGui_SetNextWindowContentSize(App.ctx, lane_w + 45, App.arrange_h - 20)
-	if reaper.ImGui_BeginChild(App.ctx, "Arrange##win_arrange", App.window_w - App.window_indent, App.arrange_h, true, reaper.ImGui_WindowFlags_HorizontalScrollbar() | reaper.ImGui_WindowFlags_NoMove()) then
+function UI.Render_Editor()
+	App.editor_h = 50 + ((App.num_strings) * 12)
+	local num_grid_divisions = Util.NumGridDivisions()
+	local lane_w = num_grid_divisions * App.grid_w
+	reaper.ImGui_SetNextWindowContentSize(App.ctx, lane_w + 45, App.editor_h - 20)
+	if reaper.ImGui_BeginChild(App.ctx, "Editor##win_editor", App.window_w - App.window_indent, App.editor_h, true, reaper.ImGui_WindowFlags_HorizontalScrollbar() | reaper.ImGui_WindowFlags_NoMove()) then
 		
 		local draw_list = reaper.ImGui_GetWindowDrawList(App.ctx)
 		App.scroll_x = reaper.ImGui_GetScrollX(App.ctx)
-		App.arrange_win_x, App.arrange_win_y = reaper.ImGui_GetWindowPos(App.ctx)
+		App.editor_win_x, App.editor_win_y = reaper.ImGui_GetWindowPos(App.ctx)
 		
 		-- Scroll horizontally with mousewheel without holding SHIFT
 		local mw = reaper.ImGui_GetMouseWheel(App.ctx)
@@ -151,44 +152,44 @@ function UI.DrawArrange()
 		reaper.ImGui_SetScrollX(App.ctx, App.scroll_x)
 		App.scroll_x = reaper.ImGui_GetScrollX(App.ctx) -- get back clamped value from ImGui
 		
-		local lane_start_x = App.arrange_win_x + App.left_margin - App.scroll_x
+		local lane_start_x = App.editor_win_x + App.left_margin - App.scroll_x
 		local lane_end_x = lane_start_x + lane_w
 		
 		-- Lanes
 		for i = 0, App.num_strings - 1 do
-			reaper.ImGui_DrawList_AddLine(draw_list, lane_start_x, App.arrange_win_y + App.top_margin + (i * App.lane_v_spacing), lane_end_x, App.arrange_win_y + App.top_margin + (i * App.lane_v_spacing), Colors.lane)
+			reaper.ImGui_DrawList_AddLine(draw_list, lane_start_x, App.editor_win_y + App.top_margin + (i * App.lane_v_spacing), lane_end_x, App.editor_win_y + App.top_margin + (i * App.lane_v_spacing), Colors.lane)
 		end
 		
 		-- Measures & beats lines and legends
 		local measure_count = 1
 		local beat_count = 1
 		
-		for i = 0, App.num_grid_divisions do
+		for i = 0, num_grid_divisions do
 			if i % App.signature[App.signature_cur_idx].subs == 0 then
 				
 				if (i ~= 0 and i % (App.signature[App.signature_cur_idx].beats * App.signature[App.signature_cur_idx].subs) == 0) then
-					reaper.ImGui_DrawList_AddLine(draw_list, App.arrange_win_x + App.left_margin + (App.grid_w * i) - App.scroll_x, App.arrange_win_y + App.top_margin, App.arrange_win_x + App.left_margin + (App.grid_w * i) - App.scroll_x, App.arrange_win_y + App.top_margin + ((App.num_strings - 1) * 12), Colors.lane)
+					reaper.ImGui_DrawList_AddLine(draw_list, App.editor_win_x + App.left_margin + (App.grid_w * i) - App.scroll_x, App.editor_win_y + App.top_margin, App.editor_win_x + App.left_margin + (App.grid_w * i) - App.scroll_x, App.editor_win_y + App.top_margin + ((App.num_strings - 1) * 12), Colors.lane)
 					measure_count = measure_count + 1
 					beat_count = 1
 				end
 				
-				if i ~= App.num_grid_divisions then
+				if i ~= num_grid_divisions then
 					local txt = measure_count .. "-" .. beat_count
-					reaper.ImGui_DrawList_AddTextEx(draw_list, nil, 11, App.arrange_win_x + App.left_margin + (App.grid_w * i) - App.scroll_x, App.arrange_win_y + App.top_margin - 20, Colors.text, txt)
+					reaper.ImGui_DrawList_AddTextEx(draw_list, nil, 11, App.editor_win_x + App.left_margin + (App.grid_w * i) - App.scroll_x, App.editor_win_y + App.top_margin - 20, Colors.text, txt)
 					beat_count = beat_count + 1
 				end
 				
 			else
-				reaper.ImGui_DrawList_AddLine(draw_list, App.arrange_win_x + App.left_margin + (App.grid_w * i) - App.scroll_x, App.arrange_win_y + App.top_margin - 17, App.arrange_win_x + App.left_margin + (App.grid_w * i) - App.scroll_x, App.arrange_win_y + App.top_margin - 12, Colors.lane)
+				reaper.ImGui_DrawList_AddLine(draw_list, App.editor_win_x + App.left_margin + (App.grid_w * i) - App.scroll_x, App.editor_win_y + App.top_margin - 17, App.editor_win_x + App.left_margin + (App.grid_w * i) - App.scroll_x, App.editor_win_y + App.top_margin - 12, Colors.lane)
 			end
 		end
 		
 		-- Notes
-		UI.DrawNotes(draw_list)
+		UI.Render_Notes(draw_list)
 		
-		-- Capture the bountaries of arrange area and display note preview
-		local rect_x1 = App.arrange_win_x + App.left_margin
-		local rect_y1 = App.arrange_win_y + App.top_margin - 5
+		-- Capture the bountaries of editor area and display note preview
+		local rect_x1 = App.editor_win_x + App.left_margin
+		local rect_y1 = App.editor_win_y + App.top_margin - 5
 		local rect_x2 = lane_end_x - 1
 		local rect_y2 = rect_y1 + 11 + (App.num_strings - 1) * App.lane_v_spacing
 		
@@ -198,8 +199,8 @@ function UI.DrawArrange()
 			
 			if App.mouse_x > rect_x1 and App.mouse_x < rect_x2  and App.mouse_y > rect_y1 and App.mouse_y < rect_y2  then
 				if Util.IsCellEmpty(cell_x, cell_y, true) then
-					local preview_x = App.arrange_win_x + App.left_margin + (cell_x * App.note_w) - App.scroll_x
-					local preview_y = App.arrange_win_y + App.top_margin + (cell_y * App.note_h) - 5
+					local preview_x = App.editor_win_x + App.left_margin + (cell_x * App.note_w) - App.scroll_x
+					local preview_y = App.editor_win_y + App.top_margin + (cell_y * App.note_h) - 5
 					reaper.ImGui_DrawList_AddRectFilled(draw_list, preview_x, preview_y, preview_x + App.note_w - 1, preview_y + App.note_h - 1, Colors.note_preview, 40)
 				end
 				if reaper.ImGui_IsMouseClicked(App.ctx, 0) then
@@ -228,11 +229,11 @@ function UI.DrawArrange()
 			Editor.OnMouseButtonDrag(e_MouseButton.Right)
 		end
 		
-		-- debug draw arrange mouse area
-		-- reaper.ImGui_DrawList_AddRect(draw_list, lane_start_x, App.arrange_win_y + App.top_margin - 5, lane_end_x + 1, App.arrange_win_y+App.top_margin - 5 + 11 + ((App.num_strings - 1) * App.lane_v_spacing), Colors.red)
+		-- debug draw editor mouse area
+		-- reaper.ImGui_DrawList_AddRect(draw_list, lane_start_x, App.editor_win_y + App.top_margin - 5, lane_end_x + 1, App.editor_win_y+App.top_margin - 5 + 11 + ((App.num_strings - 1) * App.lane_v_spacing), Colors.red)
 		
 		-- Mask rect
-		reaper.ImGui_DrawList_AddRectFilled(draw_list, App.arrange_win_x, App.arrange_win_y + 2, App.arrange_win_x + App.left_margin, App.arrange_win_y + 140, Colors.bg)
+		reaper.ImGui_DrawList_AddRectFilled(draw_list, App.editor_win_x, App.editor_win_y + 2, App.editor_win_x + App.left_margin, App.editor_win_y + 140, Colors.bg)
 		
 		-- String legends
 		for i = 0, App.num_strings - 1 do
@@ -240,7 +241,7 @@ function UI.DrawArrange()
 			local len = string.len(str)
 			local space
 			if len == 2 then space = "  " else space = " " end
-			reaper.ImGui_DrawList_AddText(draw_list, App.arrange_win_x + 8, App.arrange_win_y + 23 + (i * App.lane_v_spacing), Colors.text, str .. space .. "*")
+			reaper.ImGui_DrawList_AddText(draw_list, App.editor_win_x + 8, App.editor_win_y + 23 + (i * App.lane_v_spacing), Colors.text, str .. space .. "*")
 		end
 		
 		reaper.ImGui_EndChild(App.ctx)
