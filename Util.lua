@@ -111,13 +111,27 @@ function Util.GetCellNearestOccupied(cx, cy, direction)
 end
 
 function Util.CreateMIDI()
+	local ppq = 960
+	local q = {0.25, 0.5, 1, 2, 4, 8, 16}
+	-- {"1/1", "1/2", "1/4", "1/8", "1/16", "1/32", "1/64"},
+	ratio = ppq / q[App.quantize_cur_idx]
+
 	local track = reaper.GetSelectedTrack(0, 0)
-	local pos = reaper.GetCursorPositionEx(0)
-	local new_item = reaper.CreateNewMIDIItemInProj(track, 0, 5)
+	if track == nil then return; end
+
+	local start_time_secs = reaper.GetCursorPositionEx(0)
+	local end_time_secs = reaper.TimeMap2_beatsToTime(0, 0, App.num_measures)
+	local new_item = reaper.CreateNewMIDIItemInProj(track, start_time_secs, start_time_secs + end_time_secs)
 	local take = reaper.GetActiveTake(new_item)
+	local start_ppq = reaper.MIDI_GetPPQPosFromProjTime(take, start_time_secs)
+
+	local note_begin
+	local note_end
 	
 	for i, note in ipairs(App.note_list) do
-		reaper.MIDI_InsertNote(take, false, false, 0, 960, 0, note.pitch, note.velocity)
+		note_begin = start_ppq + (note.offset * ratio)
+		note_end = note_begin + (note.duration * ratio)
+		reaper.MIDI_InsertNote(take, false, false, note_begin, note_end, 0, note.pitch, note.velocity)
 	end
 end
 

@@ -1,5 +1,17 @@
 Editor = {}
 
+function Editor.PlayNote()
+	if App.last_note_clicked[1] == nil then return; end
+	local idx = App.last_note_clicked[1].idx
+	reaper.StuffMIDIMessage(0, 0x90, App.current_pitch, App.note_list[idx].velocity)
+end
+
+function Editor.StopNote()
+	if App.last_note_clicked[1] == nil then return; end
+	local idx = App.last_note_clicked[1].idx
+	reaper.StuffMIDIMessage(0, 0x80, App.current_pitch, App.note_list[idx].velocity)
+end
+
 function Editor.SelectNotes(cx, cy)
 	for i, note in ipairs(App.note_list) do
 		if (cx >= note.offset) and (cx < note.offset + note.duration) and (cy == note.string_idx) then
@@ -12,6 +24,7 @@ function Editor.SelectNotes(cx, cy)
 				end
 			end
 			App.last_note_clicked[1] = Util.CopyNote(note)
+			App.current_pitch = App.last_note_clicked[1].pitch
 		end
 	end
 end
@@ -30,6 +43,7 @@ function Editor.OnMouseButtonClick(mbutton, cx, cy)
 		else
 			if (App.active_tool == e_Tool.Select) or (App.active_tool == e_Tool.Move) or (App.active_tool == e_Tool.Draw) then
 				Editor.SelectNotes(cx, cy)
+				Editor.PlayNote()
 			elseif App.active_tool == e_Tool.Erase then
 				Editor.EraseNotes(cx, cy)
 			end
@@ -41,9 +55,11 @@ function Editor.OnMouseButtonRelease(mbutton)
 	App.can_init_drag = false
 	
 	if mbutton == e_MouseButton.Left or mbutton == e_MouseButton.Right then
+		Editor.StopNote()
 		App.last_note_clicked[1] = nil
 		Util.UpdateSelectedNotes()
 	end
+	msg(#App.note_list_selected)
 end
 
 function Editor.OnMouseButtonDrag(mbutton)
@@ -55,9 +71,8 @@ function Editor.OnMouseButtonDrag(mbutton)
 	local cy = Util.GetCellY()
 	local dx = cx - App.last_note_clicked[1].duration - App.last_note_clicked[1].offset + 1
 	local dy = App.last_note_clicked[1].string_idx - cy
-
-	if mbutton == e_MouseButton.Left then
-		
+	
+	if mbutton == e_MouseButton.Left then	
 		if App.active_tool == e_Tool.Draw or App.active_tool == e_Tool.Select then
 			Editor.ModifyPitchAndDuration(cx, cy, dx, dy)
 		elseif App.active_tool == e_Tool.Move then
@@ -70,23 +85,28 @@ end
 
 function Editor.InsertNote(cx, cy)
 	local open_pitch = App.instrument[App.num_strings - 3].open[App.num_strings - cy]
-	local new_note = {idx = #App.note_list + 1, offset = cx, string_idx = cy, pitch = open_pitch, velocity = 127, duration = 1}
+	local new_note = {idx = #App.note_list + 1, offset = cx, string_idx = cy, pitch = open_pitch, velocity = 80, duration = 1}
 	App.note_list[#App.note_list + 1] = new_note
 	App.note_list_selected[#App.note_list_selected + 1] = Util.CopyNote(new_note)
 	App.last_note_clicked[1] = Util.CopyNote(new_note)
+	App.current_pitch = App.last_note_clicked[1].pitch
+	Editor.PlayNote()
 	-- do push undo here
 end
 
 function Editor.EraseNotes(cx, cy)
-	if Util.IsNoteAtCellSelected(cx, cy) then	
+	if Util.IsNoteAtCellSelected(cx, cy) then
 		table.sort(App.note_list_selected, function (k1, k2) return k1.idx < k2.idx; end)
 		local len = #App.note_list_selected
 		for i = len, 1, -1 do
 			table.remove(App.note_list, App.note_list_selected[i].idx)
 		end
 	else
-		table.remove(App.note_list, Util.GetNoteIndexAtCell(cx, cy))
+		local idx = Util.GetNoteIndexAtCell(cx, cy)
+		table.remove(App.note_list, idx)
 	end
+
+	Util.ClearTable(App.note_list_selected)
 end
 
 function Editor.MoveNotes(cx, cy, dx, dy)
@@ -113,6 +133,13 @@ function Editor.ModifyPitchAndDuration(cx, cy, dx, dy)
 		local pitch_max = pitch_min + 24
 		App.note_list[v.idx].pitch = Util.Clamp(v.pitch + dy, pitch_min, pitch_max)
 	end
+	
+	local idx = App.last_note_clicked[1].idx
+	if App.current_pitch ~= App.note_list[idx].pitch then
+		Editor.StopNote()
+		App.current_pitch = App.note_list[idx].pitch
+		Editor.PlayNote()
+	end
 end
 
 function Editor.ModifyVelocityAndOffVelocity(cx, cy, dx, dy)
@@ -120,3 +147,4 @@ function Editor.ModifyVelocityAndOffVelocity(cx, cy, dx, dy)
 		App.note_list[v.idx].velocity = v.velocity + dy
 	end
 end
+
