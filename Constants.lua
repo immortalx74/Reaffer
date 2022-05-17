@@ -12,6 +12,15 @@ e_Tool =
 	Paste = 10
 }
 
+e_NoteDisplay = 
+{
+	Pitch = 1,
+	Fret = 2,
+	PitchAndFret = 3,
+	Velocity = 4,
+	OffVelocity = 5,
+}
+
 e_Direction = 
 {
 	Left = 1,

@@ -135,7 +135,7 @@ function Util.CreateMIDI()
 end
 
 function Util.CopyNote(note)
-	local t = {idx = note.idx, offset = note.offset, string_idx = note.string_idx, pitch = note.pitch, velocity = note.velocity, duration = note.duration}
+	local t = {idx = note.idx, offset = note.offset, string_idx = note.string_idx, pitch = note.pitch, velocity = note.velocity, off_velocity = note.off_velocity, duration = note.duration}
 	return t
 end
 
@@ -189,4 +189,8 @@ function Util.RecalculateStoredNoteIndices()
 	for i, v in ipairs(App.note_list) do
 		v.idx = i
 	end
+end
+
+function Util.UpdateRecentPitch(string_idx, new_pitch)
+	App.instrument[App.num_strings - 3].recent[string_idx] = new_pitch
 end

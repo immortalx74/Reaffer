@@ -26,7 +26,7 @@ App =
 	cb_signature_w = 76,
 	cb_quantize_w = 58,
 	si_measures_w = 140,
-	cb_note_sisplay_w = 96,
+	cb_note_sisplay_w = 112,
 	editor_h = 160,
 	grid_w = 34,
 	left_margin = 50,
@@ -36,7 +36,7 @@ App =
 	
 	-- defaults
 	wheel_delta = 50,
-	active_tool,
+	active_tool = e_Tool.Select,
 	num_strings = 6,
 	num_measures = 4,
 	quantize_cur_idx = 5,
@@ -46,43 +46,42 @@ App =
 	-- data
 	quantize = {"1/1", "1/2", "1/4", "1/8", "1/16", "1/32", "1/64"},
 	
-	note_display = {"Pitch", "Fret", "Pitch&Fret", "Velocity"},
+	note_display = {"Pitch", "Fret", "Pitch&Fret", "Velocity", "Off Velocity"},
 	
 	signature = {
-		{caption = "2/4", beats = 2, subs = 4},
-		{caption = "3/4", beats = 3, subs = 4},
-		{caption = "4/4", beats = 4, subs = 4},
-		{caption = "5/4", beats = 5, subs = 4},
-		{caption = "6/4", beats = 6, subs = 4},
-		{caption = "7/4", beats = 7, subs = 4},
-		{caption = "8/4", beats = 8, subs = 4},
-		{caption = "6/8", beats = 3, subs = 4},
+		{caption = "2/4",     beats = 2, subs = 4},
+		{caption = "3/4",     beats = 3, subs = 4},
+		{caption = "4/4",     beats = 4, subs = 4},
+		{caption = "5/4",     beats = 5, subs = 4},
+		{caption = "6/4",     beats = 6, subs = 4},
+		{caption = "7/4",     beats = 7, subs = 4},
+		{caption = "8/4",     beats = 8, subs = 4},
+		{caption = "6/8",     beats = 3, subs = 4},
 		{caption = "3/4 Tri", beats = 3, subs = 3},
 		{caption = "4/4 Tri", beats = 4, subs = 3},
 		{caption = "8/4 Tri", beats = 8, subs = 3}
 	},
-	
+
 	instrument =
 	{
-		{num_strings = 4, open = {28, 33, 38, 43}, "E1", "A1", "D2", "G2"},
-		{num_strings = 5, open = {23, 28, 33, 38, 43}, "B0", "E1", "A1", "D2", "G2"},
-		{num_strings = 6, open = {40, 45, 50, 55, 59, 64}, "E2", "A2", "D3", "G3", "B3", "E4"},
-		{num_strings = 7, open = {35, 40, 45, 50, 55, 59, 64}, "B1", "E2", "A2", "D3", "G3", "B3", "E4"},
-		{num_strings = 8, open = {30, 35, 40, 45, 50, 55, 59, 64}, "F#1", "B1", "E2", "A2", "D3", "G3", "B3", "E4"},
-		{num_strings = 9, open = {25, 30, 35, 40, 45, 50, 55, 59, 64}, "C#1", "F#1", "B1", "E2", "A2", "D3", "G3", "B3", "E4"}
+		{num_strings = 4, open = {28, 33, 38, 43},                     recent = {28, 33, 38, 43},                     "E1", "A1", "D2", "G2"},
+		{num_strings = 5, open = {23, 28, 33, 38, 43},                 recent = {23, 28, 33, 38, 43},                 "B0", "E1", "A1", "D2", "G2"},
+		{num_strings = 6, open = {40, 45, 50, 55, 59, 64},             recent = {40, 45, 50, 55, 59, 64},             "E2", "A2", "D3", "G3", "B3", "E4"},
+		{num_strings = 7, open = {35, 40, 45, 50, 55, 59, 64},         recent = {35, 40, 45, 50, 55, 59, 64},         "B1", "E2", "A2", "D3", "G3", "B3", "E4"},
+		{num_strings = 8, open = {30, 35, 40, 45, 50, 55, 59, 64},     recent = {30, 35, 40, 45, 50, 55, 59, 64},     "F#1", "B1", "E2", "A2", "D3", "G3", "B3", "E4"},
+		{num_strings = 9, open = {25, 30, 35, 40, 45, 50, 55, 59, 64}, recent = {25, 30, 35, 40, 45, 50, 55, 59, 64}, "C#1", "F#1", "B1", "E2", "A2", "D3", "G3", "B3", "E4"}
 	},
 	
 	note_sequence = {"C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"},
 	
 	note_list =
 	{
-		-- {idx = 1, offset = 6, string_idx = 2, pitch = 25, velocity = 127, duration = 1},
+		-- {idx = 1, offset = 6, string_idx = 2, pitch = 25, velocity = 127, off_velocity = 80, duration = 1},
 	},
 	
-	last_note_clicked = 
-	{
-		-- store the whole clicked note here...
-	},
+	-- table, storing last clicked note object.
+	-- That's different from last selected, as you can "re-click" an already selected note
+	last_note_clicked,
 	
 	note_list_selected = {}
 }
@@ -95,7 +94,6 @@ function App.Init()
 	Colors.text = reaper.ImGui_GetStyleColor(App.ctx, reaper.ImGui_Col_Text())
 	App.window_indent = reaper.ImGui_StyleVar_IndentSpacing()
 	App.window_w = reaper.ImGui_GetWindowWidth(App.ctx)
-	App.active_tool = e_Tool.Select
 end
 
 function App.Loop()
@@ -104,17 +102,13 @@ function App.Loop()
 	if App.is_visible then
 		App.mouse_x, App.mouse_y = reaper.ImGui_GetMousePos(App.ctx)
 		App.window_w = reaper.ImGui_GetWindowWidth(App.ctx)
-
+		
 		UI.Render_CB_Strings()
 		UI.Render_CB_Signature()
 		UI.Render_CB_Quantize()
 		UI.Render_SI_Measures()
 		UI.Render_CB_NoteDisplay()
 		UI.Render_TXT_Help()
-		Util.HorSpacer(3)
-		if reaper.ImGui_Button(App.ctx, "Debug...") then
-			--
-		end
 		UI.Render_Editor()
 		UI.Render_Toolbar()
 		

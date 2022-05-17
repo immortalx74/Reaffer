@@ -11,15 +11,17 @@ function UI.Render_Notes(draw_list)
 			note_y = App.editor_win_y + 30 + (note.string_idx * App.note_h) - 5
 			
 			reaper.ImGui_DrawList_AddRectFilled(draw_list, note_x, note_y, note_x + (App.note_w * note.duration) -1, note_y + App.note_h-1, Util.VelocityColor(note.velocity), 6)
-			if App.note_display_cur_idx == 1 then -- display pitch
+			if App.note_display_cur_idx == e_NoteDisplay.Pitch then
 				str = Util.NotePitchToName(note.pitch)
-			elseif App.note_display_cur_idx == 2 then -- display fret
+			elseif App.note_display_cur_idx == e_NoteDisplay.Fret then
 				str = Util.NotePitchToFret(note.pitch, note.string_idx)
-			elseif App.note_display_cur_idx == 3 then -- display pitch + fret. Only if duration > 1. If duration == 1, just display the pitch
+			elseif App.note_display_cur_idx == e_NoteDisplay.PitchAndFret then -- display pitch + fret. Only if duration > 1. If duration == 1, just display the pitch
 				str = Util.NotePitchToName(note.pitch)
 				if note.duration > 1 then str = str .. "," .. Util.NotePitchToFret(note.pitch, note.string_idx); end
-			elseif App.note_display_cur_idx == 4 then -- display velocity
+			elseif App.note_display_cur_idx == e_NoteDisplay.Velocity then
 				str = note.velocity
+			elseif App.note_display_cur_idx == e_NoteDisplay.OffVelocity then
+				str = note.off_velocity
 			end
 			reaper.ImGui_DrawList_AddText(draw_list, note_x + 5, note_y - 2, Colors.text, str)
 			
@@ -74,7 +76,7 @@ function UI.Render_CB_NoteDisplay()
 	Util.HorSpacer(3)
 	reaper.ImGui_SetNextItemWidth(App.ctx, App.cb_note_sisplay_w)
 	if reaper.ImGui_BeginCombo(App.ctx, "Note Display##cb_note_display", App.note_display[App.note_display_cur_idx]) then
-		for i = 1, 4 do
+		for i = 1, 5 do
 			if reaper.ImGui_Selectable(App.ctx, App.note_display[i], App.note_display_cur_idx == i) then App.note_display_cur_idx = i; end
 		end
 		reaper.ImGui_EndCombo(App.ctx)
@@ -89,7 +91,7 @@ function UI.Render_TXT_Help()
 		reaper.ImGui_BeginTooltip(App.ctx)
 		reaper.ImGui_Text(App.ctx,
 		"Help text,\n" ..
-		"This is a comment yep")
+		"Put quick help here...")
 		reaper.ImGui_EndTooltip(App.ctx)
 	end
 end
@@ -147,6 +149,8 @@ function UI.Render_Editor()
 		App.editor_win_x, App.editor_win_y = reaper.ImGui_GetWindowPos(App.ctx)
 		
 		-- Scroll horizontally with mousewheel without holding SHIFT
+		-- Works good on my desktop, but has issues on my laptop's trackpad
+		-- Comment this block to scroll with SHIFT
 		local mw = reaper.ImGui_GetMouseWheel(App.ctx)
 		App.scroll_x = App.scroll_x - mw * App.wheel_delta
 		reaper.ImGui_SetScrollX(App.ctx, App.scroll_x)
@@ -187,7 +191,7 @@ function UI.Render_Editor()
 		-- Notes
 		UI.Render_Notes(draw_list)
 		
-		-- Capture the bountaries of editor area and display note preview
+		-- Capture the boundaries of editor area and display note preview
 		local rect_x1 = App.editor_win_x + App.left_margin
 		local rect_y1 = App.editor_win_y + App.top_margin - 5
 		local rect_x2 = lane_end_x - 1
