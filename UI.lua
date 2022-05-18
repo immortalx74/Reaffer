@@ -83,6 +83,26 @@ function UI.Render_CB_NoteDisplay()
 	end
 end
 
+function UI.Render_BTN_Settings()
+	Util.HorSpacer(3)
+	if reaper.ImGui_Button(App.ctx, "Settings...##btn_settings") then
+		reaper.ImGui_OpenPopup(App.ctx, "Settings##win_settings")
+	end
+	
+	local win_x, win_y = reaper.ImGui_GetWindowPos(App.ctx)
+	local win_w, win_h = reaper.ImGui_GetWindowSize(App.ctx)
+	reaper.ImGui_SetNextWindowPos(App.ctx, (win_x + win_w) / 2, (win_y + win_h) / 2)
+	local opened = true
+
+	if reaper.ImGui_BeginPopupModal(App.ctx, "Settings##win_settings", opened,  reaper.ImGui_WindowFlags_AlwaysAutoResize()) then
+		reaper.ImGui_Checkbox(App.ctx, "Audition notes on entry/selection", true)
+		reaper.ImGui_Checkbox(App.ctx, "Swap order of Pitch&Fret note display", true)
+		reaper.ImGui_SetNextItemWidth(App.ctx, 100)
+		reaper.ImGui_InputInt(App.ctx, "Default note velocity", 80)
+		reaper.ImGui_EndPopup(App.ctx)
+	end
+end
+
 function UI.Render_TXT_Help()
 	Util.HorSpacer(3)
 	reaper.ImGui_TextDisabled(App.ctx, "(?)")
@@ -220,7 +240,7 @@ function UI.Render_Editor()
 		if reaper.ImGui_IsMouseReleased(App.ctx, 0) then
 			Editor.OnMouseButtonRelease(e_MouseButton.Left)
 		end
-
+		
 		if reaper.ImGui_IsMouseReleased(App.ctx, 1) then
 			Editor.OnMouseButtonRelease(e_MouseButton.Right)
 		end

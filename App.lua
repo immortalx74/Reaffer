@@ -16,6 +16,7 @@ App =
 	editor_win_y = 0,
 	can_init_drag = false,
 	current_pitch = 0,
+	settings_open = true,
 	
 	-- metrics
 	window_w = 800,
@@ -108,6 +109,7 @@ function App.Loop()
 		UI.Render_CB_Quantize()
 		UI.Render_SI_Measures()
 		UI.Render_CB_NoteDisplay()
+		UI.Render_BTN_Settings()
 		UI.Render_TXT_Help()
 		UI.Render_Editor()
 		UI.Render_Toolbar()
