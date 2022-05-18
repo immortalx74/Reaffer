@@ -48,12 +48,12 @@ App =
 	num_measures = 4,
 	quantize_cur_idx = 5,
 	signature_cur_idx = 3,
-	note_display_cur_idx = 1,
+	note_display_cur_idx = e_NoteDisplay.Pitch,
 	
 	-- data
 	quantize = {"1/1", "1/2", "1/4", "1/8", "1/16", "1/32", "1/64"},
 	
-	note_display = {"Pitch", "Fret", "Pitch&Fret", "Velocity", "Off Velocity"},
+	note_display = {"Pitch", "Fret", "Pitch&Fret", "Velocity", "Off Velocity", "MIDI Pitch"},
 	
 	signature = {
 		{caption = "2/4",     beats = 2, subs = 4},

@@ -195,17 +195,16 @@ function Util.UpdateRecentPitch(string_idx, new_pitch)
 	App.instrument[App.num_strings - 3].recent[string_idx] = new_pitch
 end
 
-function Util.TryMatchPitchOnMove(note, target_string_idx)
-	-- NOTE WIP
-	local min_pitch = App.instrument[App.num_strings - 3].open[target_string_idx + 1]
-	local max_pitch = min_pitch + 24
-	local cur_pitch = note.pitch
+function Util.ShiftOctaveIfOutsideRange(note, target_string_idx)
 	if note.string_idx == target_string_idx then return; end
-	if note.pitch >= min_pitch and note.pitch <= max_pitch then return; end
 
-	if note.pitch < min_pitch and note.pitch <= max_pitch then
-		note.pitch = cur_pitch + 12
-	else
-		msg("here")
+	local min_pitch = App.instrument[App.num_strings - 3].open[App.num_strings - target_string_idx]
+	local max_pitch = min_pitch + 24
+
+
+	if note.pitch > min_pitch and note.pitch > max_pitch then
+		note.pitch = note.pitch - 12
+	elseif note.pitch < min_pitch and note.pitch < max_pitch then
+		note.pitch = note.pitch + 12
 	end
 end

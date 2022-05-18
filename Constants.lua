@@ -19,6 +19,7 @@ e_NoteDisplay =
 	PitchAndFret = 3,
 	Velocity = 4,
 	OffVelocity = 5,
+	MIDIPitch = 6
 }
 
 e_Direction = 

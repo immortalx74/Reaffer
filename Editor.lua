@@ -104,7 +104,7 @@ function Editor.EraseNotes(cx, cy)
 		local idx = Util.GetNoteIndexAtCell(cx, cy)
 		table.remove(App.note_list, idx)
 	end
-
+	
 	Util.RecalculateStoredNoteIndices()
 	Util.ClearTable(App.note_list_selected)
 end
@@ -113,10 +113,10 @@ function Editor.MoveNotes(cx, cy, dx, dy)
 	for i, v in ipairs(App.note_list_selected) do
 		if cy >= 0 and cy < App.num_strings then
 			App.note_list[v.idx].offset = v.offset + dx
-
-			local target_string_idx = Util.Clamp(v.string_idx - dy, 0, App.num_strings - 1)
-			Util.TryMatchPitchOnMove(App.note_list[v.idx], target_string_idx)
-			App.note_list[v.idx].string_idx = target_string_idx
+			
+			local dst_string_idx = Util.Clamp(v.string_idx - dy, 0, App.num_strings - 1)
+			Util.ShiftOctaveIfOutsideRange(App.note_list[v.idx], dst_string_idx)
+			App.note_list[v.idx].string_idx = dst_string_idx
 		end
 	end
 end

@@ -27,6 +27,8 @@ function UI.Render_Notes(draw_list)
 				str = note.velocity
 			elseif App.note_display_cur_idx == e_NoteDisplay.OffVelocity then
 				str = note.off_velocity
+			elseif App.note_display_cur_idx == e_NoteDisplay.MIDIPitch then
+				str = note.pitch
 			end
 			reaper.ImGui_DrawList_AddText(draw_list, note_x + 5, note_y - 2, Colors.text, str)
 			
@@ -81,7 +83,7 @@ function UI.Render_CB_NoteDisplay()
 	Util.HorSpacer(3)
 	reaper.ImGui_SetNextItemWidth(App.ctx, App.cb_note_sisplay_w)
 	if reaper.ImGui_BeginCombo(App.ctx, "Note Display##cb_note_display", App.note_display[App.note_display_cur_idx]) then
-		for i = 1, 5 do
+		for i = 1, 6 do
 			if reaper.ImGui_Selectable(App.ctx, App.note_display[i], App.note_display_cur_idx == i) then App.note_display_cur_idx = i; end
 		end
 		reaper.ImGui_EndCombo(App.ctx)

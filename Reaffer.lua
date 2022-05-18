@@ -14,8 +14,6 @@
 -- Implement Undo system. Shouldn't keep selection. Just clear selection if a deleted note was selected.
 --
 -- Clamp moving notes. They currently can end out of the editor boundaries and can overlap each other.
--- Also, when a note moves to another string, try to match the same pitch on different fret, if possible.
--- If not, try to match pitch on higher/lower octave when moving up/down respectively.
 -- 
 -- Current dragging system allows each note's properties to be clamped individually
 -- Riffer works differently. It clamps all notes to the lowest possible change of that particular property (pitch, position, etc.)
