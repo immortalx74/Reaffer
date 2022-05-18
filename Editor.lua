@@ -1,13 +1,13 @@
 Editor = {}
 
 function Editor.PlayNote()
-	if App.last_note_clicked == nil then return; end
+	if App.last_note_clicked == nil or App.audition_notes == false then return; end
 	local idx = App.last_note_clicked.idx
 	reaper.StuffMIDIMessage(0, 0x90, App.current_pitch, App.note_list[idx].velocity)
 end
 
 function Editor.StopNote()
-	if App.last_note_clicked == nil then return; end
+	if App.last_note_clicked == nil or App.audition_notes == false then return; end
 	local idx = App.last_note_clicked.idx
 	reaper.StuffMIDIMessage(0, 0x80, App.current_pitch, App.note_list[idx].velocity)
 end
@@ -84,7 +84,7 @@ end
 
 function Editor.InsertNote(cx, cy)
 	local recent_pitch = App.instrument[App.num_strings - 3].recent[App.num_strings - cy]
-	local new_note = {idx = #App.note_list + 1, offset = cx, string_idx = cy, pitch = recent_pitch, velocity = 80, off_velocity = 65, duration = 1}
+	local new_note = {idx = #App.note_list + 1, offset = cx, string_idx = cy, pitch = recent_pitch, velocity = App.default_velocity, off_velocity = App.default_off_velocity, duration = 1}
 	App.note_list[#App.note_list + 1] = new_note
 	App.note_list_selected[#App.note_list_selected + 1] = Util.CopyNote(new_note)
 	App.last_note_clicked = Util.CopyNote(new_note)
@@ -113,7 +113,10 @@ function Editor.MoveNotes(cx, cy, dx, dy)
 	for i, v in ipairs(App.note_list_selected) do
 		if cy >= 0 and cy < App.num_strings then
 			App.note_list[v.idx].offset = v.offset + dx
-			App.note_list[v.idx].string_idx = Util.Clamp(v.string_idx - dy, 0, App.num_strings - 1)
+
+			local target_string_idx = Util.Clamp(v.string_idx - dy, 0, App.num_strings - 1)
+			Util.TryMatchPitchOnMove(App.note_list[v.idx], target_string_idx)
+			App.note_list[v.idx].string_idx = target_string_idx
 		end
 	end
 end

@@ -194,3 +194,18 @@ end
 function Util.UpdateRecentPitch(string_idx, new_pitch)
 	App.instrument[App.num_strings - 3].recent[string_idx] = new_pitch
 end
+
+function Util.TryMatchPitchOnMove(note, target_string_idx)
+	-- NOTE WIP
+	local min_pitch = App.instrument[App.num_strings - 3].open[target_string_idx + 1]
+	local max_pitch = min_pitch + 24
+	local cur_pitch = note.pitch
+	if note.string_idx == target_string_idx then return; end
+	if note.pitch >= min_pitch and note.pitch <= max_pitch then return; end
+
+	if note.pitch < min_pitch and note.pitch <= max_pitch then
+		note.pitch = cur_pitch + 12
+	else
+		msg("here")
+	end
+end

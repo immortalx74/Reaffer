@@ -35,6 +35,12 @@ App =
 	note_w = 34,
 	note_h = 12,
 	
+	-- settings
+	audition_notes = true,
+	swap_pitchfret_order = false,
+	default_velocity = 80,
+	default_off_velocity = 65,
+
 	-- defaults
 	wheel_delta = 50,
 	active_tool = e_Tool.Select,

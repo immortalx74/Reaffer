@@ -16,8 +16,13 @@ function UI.Render_Notes(draw_list)
 			elseif App.note_display_cur_idx == e_NoteDisplay.Fret then
 				str = Util.NotePitchToFret(note.pitch, note.string_idx)
 			elseif App.note_display_cur_idx == e_NoteDisplay.PitchAndFret then -- display pitch + fret. Only if duration > 1. If duration == 1, just display the pitch
-				str = Util.NotePitchToName(note.pitch)
-				if note.duration > 1 then str = str .. "," .. Util.NotePitchToFret(note.pitch, note.string_idx); end
+				if App.swap_pitchfret_order then
+					str = Util.NotePitchToFret(note.pitch, note.string_idx)
+					if note.duration > 1 then str = str .. "," .. Util.NotePitchToName(note.pitch); end
+				else
+					str = Util.NotePitchToName(note.pitch)
+					if note.duration > 1 then str = str .. "," .. Util.NotePitchToFret(note.pitch, note.string_idx); end
+				end
 			elseif App.note_display_cur_idx == e_NoteDisplay.Velocity then
 				str = note.velocity
 			elseif App.note_display_cur_idx == e_NoteDisplay.OffVelocity then
@@ -89,16 +94,22 @@ function UI.Render_BTN_Settings()
 		reaper.ImGui_OpenPopup(App.ctx, "Settings##win_settings")
 	end
 	
-	local win_x, win_y = reaper.ImGui_GetWindowPos(App.ctx)
-	local win_w, win_h = reaper.ImGui_GetWindowSize(App.ctx)
-	reaper.ImGui_SetNextWindowPos(App.ctx, (win_x + win_w) / 2, (win_y + win_h) / 2)
-	local opened = true
+	local pwin_x, pwin_y = reaper.ImGui_GetWindowPos(App.ctx)
+	local pwin_w, pwin_h = reaper.ImGui_GetWindowSize(App.ctx)
+	reaper.ImGui_SetNextWindowPos(App.ctx, pwin_x + (pwin_w / 2) - 180, pwin_y + (pwin_h / 2) - 100)
+	
+	if reaper.ImGui_BeginPopupModal(App.ctx, "Settings##win_settings", true,  reaper.ImGui_WindowFlags_AlwaysAutoResize()) then
+		local _, set_audition_notes = reaper.ImGui_Checkbox(App.ctx, "Audition notes on entry/selection", App.audition_notes)
+		App.audition_notes = set_audition_notes
+		
+		local _, set_swap_pitchfret_order =  reaper.ImGui_Checkbox(App.ctx, "Swap order of Pitch&Fret note display", App.swap_pitchfret_order)
+		App.swap_pitchfret_order = set_swap_pitchfret_order
+		
+		local _, set_default_velocity = reaper.ImGui_SliderInt(App.ctx, "Default note velocity", App.default_velocity, 0, 127)
+		App.default_velocity = set_default_velocity
 
-	if reaper.ImGui_BeginPopupModal(App.ctx, "Settings##win_settings", opened,  reaper.ImGui_WindowFlags_AlwaysAutoResize()) then
-		reaper.ImGui_Checkbox(App.ctx, "Audition notes on entry/selection", true)
-		reaper.ImGui_Checkbox(App.ctx, "Swap order of Pitch&Fret note display", true)
-		reaper.ImGui_SetNextItemWidth(App.ctx, 100)
-		reaper.ImGui_InputInt(App.ctx, "Default note velocity", 80)
+		local _, set_default_off_velocity = reaper.ImGui_SliderInt(App.ctx, "Default note off-velocity", App.default_off_velocity, 0, 127)
+		App.default_off_velocity = set_default_off_velocity
 		reaper.ImGui_EndPopup(App.ctx)
 	end
 end
