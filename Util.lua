@@ -203,8 +203,14 @@ function Util.ShiftOctaveIfOutsideRange(note, target_string_idx)
 
 
 	if note.pitch > min_pitch and note.pitch > max_pitch then
+		Editor.StopNote()
 		note.pitch = note.pitch - 12
+		App.current_pitch = note.pitch
+		Editor.PlayNote()
 	elseif note.pitch < min_pitch and note.pitch < max_pitch then
+		Editor.StopNote()
 		note.pitch = note.pitch + 12
+		App.current_pitch = note.pitch
+		Editor.PlayNote()
 	end
 end
