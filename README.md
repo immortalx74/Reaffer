@@ -1,2 +1,2 @@
 # Reaffer
-Based on Ample Sound's riffer found in their guitar/bass VSTs
+ReaScript for Reaper, based on Ample Sound's riffer found in their guitar/bass VSTs.
