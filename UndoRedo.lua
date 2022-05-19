@@ -9,6 +9,11 @@ UR =
 function UR.PushUndo(type, note_list)
 	local new_rec = {type = type, note_list = note_list}
 	UR.undo_stack[#UR.undo_stack + 1] = new_rec
+
+	-- clear redo stack
+	if #UR.redo_stack > 0 then
+		Util.ClearTable(UR.redo_stack)
+	end
 end
 
 function UR.PopUndo()
@@ -27,6 +32,9 @@ function UR.PopUndo()
 	-- push to the redo stack, pop from the undo
 	UR.redo_stack[#UR.redo_stack + 1] = last_rec
 	UR.undo_stack[#UR.undo_stack] = nil
+
+	Util.ClearTable(App.note_list_selected)
+	App.last_note_clicked = nil
 end
 
 function UR.PushRedo()

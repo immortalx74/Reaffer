@@ -91,6 +91,7 @@ function Editor.InsertNote(cx, cy)
 	App.current_pitch = App.last_note_clicked.pitch
 	Editor.PlayNote()
 	-- push undo here
+	UR.PushUndo(e_OpType.Insert, {new_note})
 end
 
 function Editor.EraseNotes(cx, cy)
