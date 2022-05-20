@@ -16,7 +16,8 @@ App =
 	editor_win_y = 0,
 	can_init_drag = false,
 	current_pitch = 0,
-	settings_open = true,
+	is_new_note = false,
+	last_click_was_inside_editor = false,
 	
 	-- metrics
 	window_w = 800,
@@ -40,7 +41,7 @@ App =
 	swap_pitchfret_order = false,
 	default_velocity = 80,
 	default_off_velocity = 65,
-
+	
 	-- defaults
 	wheel_delta = 50,
 	active_tool = e_Tool.Select,
@@ -68,7 +69,7 @@ App =
 		{caption = "4/4 Tri", beats = 4, subs = 3},
 		{caption = "8/4 Tri", beats = 8, subs = 3}
 	},
-
+	
 	instrument =
 	{
 		{num_strings = 4, open = {28, 33, 38, 43},                     recent = {28, 33, 38, 43},                     "E1", "A1", "D2", "G2"},
@@ -110,6 +111,19 @@ function App.Loop()
 		App.mouse_x, App.mouse_y = reaper.ImGui_GetMousePos(App.ctx)
 		App.window_w = reaper.ImGui_GetWindowWidth(App.ctx)
 		
+		-- if reaper.ImGui_GetKeyMods(App.ctx) == reaper.ImGui_KeyModFlags_Ctrl() and reaper.ImGui_IsKeyPressed(App.ctx, reaper.ImGui_Key_Z()) then
+		-- 	UR.PopUndo()
+		-- end
+		-- if reaper.ImGui_GetKeyMods(App.ctx) == reaper.ImGui_KeyModFlags_Ctrl() + reaper.ImGui_KeyModFlags_Shift() and reaper.ImGui_IsKeyPressed(App.ctx, reaper.ImGui_Key_Z()) then
+		-- 	UR.PopRedo()
+		-- end
+		if reaper.ImGui_IsKeyDown(App.ctx, reaper.ImGui_Key_ModCtrl()) and not reaper.ImGui_IsKeyDown(App.ctx, reaper.ImGui_Key_ModShift()) and reaper.ImGui_IsKeyPressed(App.ctx, reaper.ImGui_Key_Z()) then
+			msg("undo")
+		end
+		if reaper.ImGui_IsKeyDown(App.ctx, reaper.ImGui_Key_ModCtrl()) and reaper.ImGui_IsKeyDown(App.ctx, reaper.ImGui_Key_ModShift()) and reaper.ImGui_IsKeyPressed(App.ctx, reaper.ImGui_Key_Z()) then
+			msg("redo")
+		end
+
 		UI.Render_CB_Strings()
 		UI.Render_CB_Signature()
 		UI.Render_CB_Quantize()

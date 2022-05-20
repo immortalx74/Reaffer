@@ -135,6 +135,10 @@ function Util.CreateMIDI()
 end
 
 function Util.CopyNote(note)
+	if note == nil then
+		msg("note is nil")
+		return
+	end
 	local t = {idx = note.idx, offset = note.offset, string_idx = note.string_idx, pitch = note.pitch, velocity = note.velocity, off_velocity = note.off_velocity, duration = note.duration}
 	return t
 end
@@ -143,6 +147,15 @@ function Util.ClearTable(t)
 	for i, v in ipairs(t) do
 		t[i] = nil
 	end
+end
+
+function Util.CopyTable(t)
+	local new_t = {}
+	for i, v in ipairs(t) do
+		new_t[i] = v
+	end
+
+	return new_t
 end
 
 function Util.IsNoteSelected(note)

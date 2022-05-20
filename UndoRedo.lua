@@ -1,5 +1,6 @@
 UR = 
 {
+	last_op = nil,
 	undo_stack = {},
 	redo_stack = {}
 	-- {type = ?, note_list = {	{idx = ?, offset = ?, etc}, {idx = ?, offset = ?, etc}, ...	}	}
@@ -7,26 +8,87 @@ UR =
 }
 
 function UR.PushUndo(type, note_list)
-	local new_rec = {type = type, note_list = note_list}
+	local new_rec = {type = type, note_list = Util.CopyTable(note_list)}
 	UR.undo_stack[#UR.undo_stack + 1] = new_rec
+	
+	-- clear redo stack
+	if #UR.redo_stack > 0 then
+		Util.ClearTable(UR.redo_stack)
+		Util.RecalculateStoredNoteIndices()
+	end
 end
 
 function UR.PopUndo()
 	if #UR.undo_stack == 0 then return; end
-	
 	local last_rec = UR.undo_stack[#UR.undo_stack]
 	local type = last_rec.type
 	
-	-- do op
+	if type == e_OpType.Delete then
+		for i, v in ipairs(last_rec.note_list) do
+			table.insert(App.note_list, v)
+		end
+	end
+	
 	if type == e_OpType.Insert then
 		for i, v in ipairs(last_rec.note_list) do
 			table.remove(App.note_list, v.idx)
 		end
 	end
 	
+	if type == e_OpType.ModifyPitchAndDuration then
+		local temp = {}
+		
+		for i, v in ipairs(last_rec.note_list) do
+			temp.pitch = App.note_list[v.idx].pitch
+			temp.duration = App.note_list[v.idx].duration
+			
+			App.note_list[v.idx].pitch = v.pitch
+			App.note_list[v.idx].duration = v.duration
+			
+			v.pitch = temp.pitch
+			v.duration = temp.duration
+		end
+	end
+	
+	if type == e_OpType.ModifyVelocityAndOffVelocity then
+		local temp = {}
+		
+		for i, v in ipairs(last_rec.note_list) do
+			temp.velocity = App.note_list[v.idx].velocity
+			temp.off_velocity = App.note_list[v.idx].off_velocity
+			
+			App.note_list[v.idx].velocity = v.velocity
+			App.note_list[v.idx].off_velocity = v.off_velocity
+			
+			v.velocity = temp.velocity
+			v.off_velocity = temp.off_velocity
+		end
+	end
+
+	if type == e_OpType.Move then
+		local temp = {}
+		--NOTE pitch may be modified by moving note to different string. So we account for that too
+		for i, v in ipairs(last_rec.note_list) do
+			temp.offset = App.note_list[v.idx].offset
+			temp.string_idx = App.note_list[v.idx].string_idx
+			temp.pitch = App.note_list[v.idx].pitch
+			
+			App.note_list[v.idx].offset = v.offset
+			App.note_list[v.idx].string_idx = v.string_idx
+			App.note_list[v.idx].pitch = v.pitch
+			
+			v.offset = temp.offset
+			v.string_idx = temp.string_idx
+			v.pitch = temp.pitch
+		end
+	end
+	
 	-- push to the redo stack, pop from the undo
 	UR.redo_stack[#UR.redo_stack + 1] = last_rec
 	UR.undo_stack[#UR.undo_stack] = nil
+	
+	Util.ClearTable(App.note_list_selected)
+	App.last_note_clicked = nil
 end
 
 function UR.PushRedo()
@@ -41,8 +103,61 @@ function UR.PopRedo()
 	
 	if type == e_OpType.Insert then
 		for i, v in ipairs(last_rec.note_list) do
-			-- NOTE restoring notes to their original idx (slow). Could restore them to the end of the table. Needs thinking.
-			table.insert(App.note_list, v.idx, v)
+			table.insert(App.note_list, v)
+		end
+	end
+	
+	if type == e_OpType.Delete then
+		for i, v in ipairs(last_rec.note_list) do
+			table.remove(App.note_list, v.idx)
+		end
+	end
+	
+	if type == e_OpType.ModifyPitchAndDuration then
+		local temp = {}
+
+		for i, v in ipairs(last_rec.note_list) do
+			temp.pitch = App.note_list[v.idx].pitch
+			temp.duration = App.note_list[v.idx].duration
+			
+			App.note_list[v.idx].pitch = v.pitch
+			App.note_list[v.idx].duration = v.duration
+			
+			v.pitch = temp.pitch
+			v.duration = temp.duration
+		end
+	end
+	
+	if type == e_OpType.ModifyVelocityAndOffVelocity then
+		local temp = {}
+
+		for i, v in ipairs(last_rec.note_list) do
+			temp.velocity = App.note_list[v.idx].velocity
+			temp.off_velocity = App.note_list[v.idx].off_velocity
+			
+			App.note_list[v.idx].velocity = v.velocity
+			App.note_list[v.idx].off_velocity = v.off_velocity
+			
+			v.velocity = temp.velocity
+			v.off_velocity = temp.off_velocity
+		end
+	end
+
+	if type == e_OpType.Move then
+		local temp = {}
+
+		for i, v in ipairs(last_rec.note_list) do
+			temp.offset = App.note_list[v.idx].offset
+			temp.string_idx = App.note_list[v.idx].string_idx
+			temp.pitch = App.note_list[v.idx].pitch
+			
+			App.note_list[v.idx].offset = v.offset
+			App.note_list[v.idx].string_idx = v.string_idx
+			App.note_list[v.idx].pitch = v.pitch
+			
+			v.offset = temp.offset
+			v.string_idx = temp.string_idx
+			v.pitch = temp.pitch
 		end
 	end
 	

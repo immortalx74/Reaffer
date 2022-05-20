@@ -39,6 +39,9 @@ e_OpType =
 {
 	Insert = 1,
 	Delete = 2,
+	ModifyPitchAndDuration = 3,
+	ModifyVelocityAndOffVelocity = 4,
+	Move = 5
 	-- more here...
 }
 

@@ -1,36 +1,8 @@
 Editor = {}
 
-function Editor.PlayNote()
-	if App.last_note_clicked == nil or App.audition_notes == false then return; end
-	local idx = App.last_note_clicked.idx
-	reaper.StuffMIDIMessage(0, 0x90, App.current_pitch, App.note_list[idx].velocity)
-end
-
-function Editor.StopNote()
-	if App.last_note_clicked == nil or App.audition_notes == false then return; end
-	local idx = App.last_note_clicked.idx
-	reaper.StuffMIDIMessage(0, 0x80, App.current_pitch, App.note_list[idx].velocity)
-end
-
-function Editor.SelectNotes(cx, cy)
-	for i, note in ipairs(App.note_list) do
-		if (cx >= note.offset) and (cx < note.offset + note.duration) and (cy == note.string_idx) then
-			if reaper.ImGui_IsKeyDown(App.ctx, reaper.ImGui_Key_ModCtrl()) then
-				App.note_list_selected[#App.note_list_selected + 1] = Util.CopyNote(note)
-			else
-				if not Util.IsNoteSelected(note) then
-					Util.ClearTable(App.note_list_selected)
-					App.note_list_selected[#App.note_list_selected + 1] = Util.CopyNote(note)
-				end
-			end
-			App.last_note_clicked = Util.CopyNote(note)
-			App.current_pitch = App.last_note_clicked.pitch
-		end
-	end
-end
-
 function Editor.OnMouseButtonClick(mbutton, cx, cy)
 	App.can_init_drag = true
+	App.last_click_was_inside_editor = true
 	
 	if mbutton == e_MouseButton.Left or mbutton == e_MouseButton.Right then
 		if Util.IsCellEmpty(cx, cy, true) then
@@ -52,12 +24,27 @@ function Editor.OnMouseButtonClick(mbutton, cx, cy)
 end
 
 function Editor.OnMouseButtonRelease(mbutton)
-	App.can_init_drag = false
-	
-	if mbutton == e_MouseButton.Left or mbutton == e_MouseButton.Right then
-		Editor.StopNote()
-		App.last_note_clicked = nil
-		Util.UpdateSelectedNotes()
+	if App.last_click_was_inside_editor then
+		App.can_init_drag = false
+		App.last_click_was_inside_editor = false
+		
+		if mbutton == e_MouseButton.Left or mbutton == e_MouseButton.Right then
+			Editor.StopNote()
+			App.last_note_clicked = nil
+			
+			if #App.note_list_selected > 0 and not (App.is_new_note) then
+				if UR.last_op == e_OpType.ModifyPitchAndDuration then
+					UR.PushUndo(e_OpType.ModifyPitchAndDuration, App.note_list_selected)
+				elseif UR.last_op == e_OpType.ModifyVelocityAndOffVelocity then
+					UR.PushUndo(e_OpType.ModifyVelocityAndOffVelocity, App.note_list_selected)
+				elseif UR.last_op == e_OpType.Move then
+					UR.PushUndo(e_OpType.Move, App.note_list_selected)
+				end
+			end
+			
+			App.is_new_note = false
+			Util.UpdateSelectedNotes()
+		end
 	end
 end
 
@@ -82,6 +69,23 @@ function Editor.OnMouseButtonDrag(mbutton)
 	end
 end
 
+function Editor.SelectNotes(cx, cy)
+	for i, note in ipairs(App.note_list) do
+		if (cx >= note.offset) and (cx < note.offset + note.duration) and (cy == note.string_idx) then
+			if reaper.ImGui_IsKeyDown(App.ctx, reaper.ImGui_Key_ModCtrl()) then
+				App.note_list_selected[#App.note_list_selected + 1] = Util.CopyNote(note)
+			else
+				if not Util.IsNoteSelected(note) then
+					Util.ClearTable(App.note_list_selected)
+					App.note_list_selected[#App.note_list_selected + 1] = Util.CopyNote(note)
+				end
+			end
+			App.last_note_clicked = Util.CopyNote(note)
+			App.current_pitch = App.last_note_clicked.pitch
+		end
+	end
+end
+
 function Editor.InsertNote(cx, cy)
 	local recent_pitch = App.instrument[App.num_strings - 3].recent[App.num_strings - cy]
 	local new_note = {idx = #App.note_list + 1, offset = cx, string_idx = cy, pitch = recent_pitch, velocity = App.default_velocity, off_velocity = App.default_off_velocity, duration = 1}
@@ -91,20 +95,30 @@ function Editor.InsertNote(cx, cy)
 	App.current_pitch = App.last_note_clicked.pitch
 	Editor.PlayNote()
 	-- push undo here
+	UR.PushUndo(e_OpType.Insert, {new_note})
+	App.is_new_note = true
+	UR.last_op = e_OpType.Insert
 end
 
 function Editor.EraseNotes(cx, cy)
 	if Util.IsNoteAtCellSelected(cx, cy) then
 		table.sort(App.note_list_selected, function (k1, k2) return k1.idx < k2.idx; end)
 		local len = #App.note_list_selected
+		
+		-- push undo here (multiple)
+		UR.PushUndo(e_OpType.Delete, App.note_list_selected)
+		
 		for i = len, 1, -1 do
 			table.remove(App.note_list, App.note_list_selected[i].idx)
 		end
 	else
 		local idx = Util.GetNoteIndexAtCell(cx, cy)
+		-- push undo here (single)
+		UR.PushUndo(e_OpType.Delete, {App.note_list[idx]})
 		table.remove(App.note_list, idx)
 	end
 	
+	UR.last_op = e_OpType.Delete
 	Util.RecalculateStoredNoteIndices()
 	Util.ClearTable(App.note_list_selected)
 end
@@ -119,6 +133,8 @@ function Editor.MoveNotes(cx, cy, dx, dy)
 			App.note_list[v.idx].string_idx = dst_string_idx
 		end
 	end
+	
+	UR.last_op = e_OpType.Move
 end
 
 function Editor.ModifyPitchAndDuration(cx, cy, dx, dy)
@@ -134,6 +150,8 @@ function Editor.ModifyPitchAndDuration(cx, cy, dx, dy)
 		App.note_list[v.idx].pitch = Util.Clamp(v.pitch + dy, pitch_min, pitch_max)
 		Util.UpdateRecentPitch(App.num_strings - v.string_idx, App.note_list[v.idx].pitch)
 	end
+	
+	UR.last_op = e_OpType.ModifyPitchAndDuration
 	
 	local idx = App.last_note_clicked.idx
 	if App.current_pitch ~= App.note_list[idx].pitch then
@@ -151,5 +169,18 @@ function Editor.ModifyVelocityAndOffVelocity(cx, cy, dx, dy)
 			App.note_list[v.idx].velocity = Util.Clamp(v.velocity + dy, 0, 127)
 		end
 	end
+	
+	UR.last_op = e_OpType.ModifyVelocityAndOffVelocity
 end
 
+function Editor.PlayNote()
+	if App.last_note_clicked == nil or App.audition_notes == false then return; end
+	local idx = App.last_note_clicked.idx
+	reaper.StuffMIDIMessage(0, 0x90, App.current_pitch, App.note_list[idx].velocity)
+end
+
+function Editor.StopNote()
+	if App.last_note_clicked == nil or App.audition_notes == false then return; end
+	local idx = App.last_note_clicked.idx
+	reaper.StuffMIDIMessage(0, 0x80, App.current_pitch, App.note_list[idx].velocity)
+end
