@@ -149,6 +149,15 @@ function Util.ClearTable(t)
 	end
 end
 
+function Util.CopyTable(t)
+	local new_t = {}
+	for i, v in ipairs(t) do
+		new_t[i] = v
+	end
+
+	return new_t
+end
+
 function Util.IsNoteSelected(note)
 	local idx = note.idx
 	

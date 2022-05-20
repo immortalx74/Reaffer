@@ -76,7 +76,7 @@ function UI.Render_SI_Measures()
 	Util.HorSpacer(3)
 	reaper.ImGui_SetNextItemWidth(App.ctx, App.si_measures_w)
 	local ret, val = reaper.ImGui_SliderInt(App.ctx, "Measures##si_measures", App.num_measures, 1, 64)
-	App.num_measures = val
+	App.num_measures = Util.Clamp(val, 1, 64)
 end
 
 function UI.Render_CB_NoteDisplay()
@@ -109,7 +109,7 @@ function UI.Render_BTN_Settings()
 		
 		local _, set_default_velocity = reaper.ImGui_SliderInt(App.ctx, "Default note velocity", App.default_velocity, 0, 127)
 		App.default_velocity = set_default_velocity
-
+		
 		local _, set_default_off_velocity = reaper.ImGui_SliderInt(App.ctx, "Default note off-velocity", App.default_off_velocity, 0, 127)
 		App.default_off_velocity = set_default_off_velocity
 		reaper.ImGui_EndPopup(App.ctx)
@@ -229,6 +229,9 @@ function UI.Render_Editor()
 		local rect_y1 = App.editor_win_y + App.top_margin - 5
 		local rect_x2 = lane_end_x - 1
 		local rect_y2 = rect_y1 + 11 + (App.num_strings - 1) * App.lane_v_spacing
+
+		-- debug draw editor mouse area
+		-- reaper.ImGui_DrawList_AddRect(draw_list, rect_x1, rect_y1, rect_x2, rect_y2, Colors.red)
 		
 		if reaper.ImGui_IsWindowHovered(App.ctx) then
 			local cell_x = Util.GetCellX()
@@ -265,10 +268,7 @@ function UI.Render_Editor()
 		if reaper.ImGui_IsMouseDragging(App.ctx, 1) then
 			Editor.OnMouseButtonDrag(e_MouseButton.Right)
 		end
-		
-		-- debug draw editor mouse area
-		-- reaper.ImGui_DrawList_AddRect(draw_list, lane_start_x, App.editor_win_y + App.top_margin - 5, lane_end_x + 1, App.editor_win_y+App.top_margin - 5 + 11 + ((App.num_strings - 1) * App.lane_v_spacing), Colors.red)
-		
+
 		-- Mask rect
 		reaper.ImGui_DrawList_AddRectFilled(draw_list, App.editor_win_x, App.editor_win_y + 2, App.editor_win_x + App.left_margin, App.editor_win_y + 140, Colors.bg)
 		
