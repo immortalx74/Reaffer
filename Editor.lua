@@ -1,6 +1,13 @@
 Editor = {}
 
 function Editor.OnMouseButtonClick(mbutton, cx, cy)
+	if App.attempts_paste then
+		if mbutton == e_MouseButton.Left and Util.IsCellEmpty(cx, cy, true) then
+			Clipboard.Paste(cx, cy)
+		end
+		return
+	end
+	
 	App.can_init_drag = true
 	App.last_click_was_inside_editor = true
 	
@@ -123,16 +130,48 @@ function Editor.EraseNotes(cx, cy)
 	Util.ClearTable(App.note_list_selected)
 end
 
+-- function Editor.MoveNotes(cx, cy, dx, dy)
+-- 	for i, v in ipairs(App.note_list_selected) do
+-- 		if cy >= 0 and cy < App.num_strings and cx >= 0 then
+
+-- 			local nearest_left = Util.GetCellNearestOccupied(cx, cy, e_Direction.Left, v.idx)
+-- 			local nearest_right = Util.GetCellNearestOccupied(cx, cy, e_Direction.Right, v.idx)
+-- 			App.note_list[v.idx].offset = Util.Clamp(v.offset + dx + v.duration - 1, nearest_left, nearest_right - v.duration)
+
+-- 			local dst_string_idx = Util.Clamp(v.string_idx - dy, 0, App.num_strings - 1)
+-- 			Util.ShiftOctaveIfOutsideRange(App.note_list[v.idx], dst_string_idx)
+-- 			App.note_list[v.idx].string_idx = dst_string_idx
+-- 		end
+-- 	end
+
+-- 	UR.last_op = e_OpType.Move
+-- end
+
 function Editor.MoveNotes(cx, cy, dx, dy)
-	for i, v in ipairs(App.note_list_selected) do
-		if cy >= 0 and cy < App.num_strings then
-			App.note_list[v.idx].offset = v.offset + dx
-			
-			local dst_string_idx = Util.Clamp(v.string_idx - dy, 0, App.num_strings - 1)
-			Util.ShiftOctaveIfOutsideRange(App.note_list[v.idx], dst_string_idx)
-			App.note_list[v.idx].string_idx = dst_string_idx
-		end
+	if cy >= 0 and cy < App.num_strings and cx >= 0 then
+		
+		local nearest_left = Util.GetCellNearestOccupied(cx, cy, e_Direction.Left, App.last_note_clicked.idx)
+		local nearest_right = Util.GetCellNearestOccupied(cx, cy, e_Direction.Right, App.last_note_clicked.idx)
+		App.note_list[App.last_note_clicked.idx].offset = Util.Clamp(App.last_note_clicked.offset + dx + App.last_note_clicked.duration - 1, nearest_left, nearest_right - App.last_note_clicked.duration)
+		
+		local dst_string_idx = Util.Clamp(App.last_note_clicked.string_idx - dy, 0, App.num_strings - 1)
+		Util.ShiftOctaveIfOutsideRange(App.note_list[App.last_note_clicked.idx], dst_string_idx)
+		App.note_list[App.last_note_clicked.idx].string_idx = dst_string_idx
+		msg(dx)
 	end
+	
+	-- for i, v in ipairs(App.note_list_selected) do
+	-- 	if cy >= 0 and cy < App.num_strings and cx >= 0 then
+	
+	-- 		local nearest_left = Util.GetCellNearestOccupied(cx, cy, e_Direction.Left, v.idx)
+	-- 		local nearest_right = Util.GetCellNearestOccupied(cx, cy, e_Direction.Right, v.idx)
+	-- 		App.note_list[v.idx].offset = Util.Clamp(v.offset + dx + v.duration - 1, nearest_left, nearest_right - v.duration)
+	
+	-- 		local dst_string_idx = Util.Clamp(v.string_idx - dy, 0, App.num_strings - 1)
+	-- 		Util.ShiftOctaveIfOutsideRange(App.note_list[v.idx], dst_string_idx)
+	-- 		App.note_list[v.idx].string_idx = dst_string_idx
+	-- 	end
+	-- end
 	
 	UR.last_op = e_OpType.Move
 end

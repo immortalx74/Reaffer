@@ -10,7 +10,7 @@ function UI.Render_Notes(draw_list)
 			note_x = App.editor_win_x + 50 + (note.offset * App.note_w) - App.scroll_x
 			note_y = App.editor_win_y + 30 + (note.string_idx * App.note_h) - 5
 			
-			reaper.ImGui_DrawList_AddRectFilled(draw_list, note_x, note_y, note_x + (App.note_w * note.duration) -1, note_y + App.note_h-1, Util.VelocityColor(note.velocity), 6)
+			reaper.ImGui_DrawList_AddRectFilled(draw_list, note_x, note_y, note_x + (App.note_w * note.duration) -1, note_y + App.note_h - 1, Util.VelocityColor(note.velocity), 6)
 			if App.note_display_cur_idx == e_NoteDisplay.Pitch then
 				str = Util.NotePitchToName(note.pitch)
 			elseif App.note_display_cur_idx == e_NoteDisplay.Fret then
@@ -33,7 +33,7 @@ function UI.Render_Notes(draw_list)
 			reaper.ImGui_DrawList_AddText(draw_list, note_x + 5, note_y - 2, Colors.text, str)
 			
 			if Util.IsNoteSelected(note) then
-				reaper.ImGui_DrawList_AddRect(draw_list, note_x, note_y, note_x + (App.note_w * note.duration) -1, note_y + App.note_h-1, Colors.text, 40, reaper.ImGui_DrawFlags_None(), 1)
+				reaper.ImGui_DrawList_AddRect(draw_list, note_x, note_y, note_x + (App.note_w * note.duration) - 1, note_y + App.note_h - 1, Colors.text, 40, reaper.ImGui_DrawFlags_None(), 1)
 			end
 		end
 	end
@@ -149,6 +149,12 @@ function UI.Render_Toolbar()
 					UR.PopUndo()
 				elseif i == e_Tool.Redo then
 					UR.PopRedo()
+				elseif i == e_Tool.Cut then
+					Clipboard.Cut()
+				elseif i == e_Tool.Copy then
+					Clipboard.Copy()
+				elseif i == e_Tool.Paste then
+					if #Clipboard.note_list > 0 then App.attempts_paste = true; end
 				end
 			end
 			reaper.ImGui_PopStyleColor(App.ctx)
@@ -229,7 +235,7 @@ function UI.Render_Editor()
 		local rect_y1 = App.editor_win_y + App.top_margin - 5
 		local rect_x2 = lane_end_x - 1
 		local rect_y2 = rect_y1 + 11 + (App.num_strings - 1) * App.lane_v_spacing
-
+		
 		-- debug draw editor mouse area
 		-- reaper.ImGui_DrawList_AddRect(draw_list, rect_x1, rect_y1, rect_x2, rect_y2, Colors.red)
 		
@@ -242,6 +248,12 @@ function UI.Render_Editor()
 					local preview_x = App.editor_win_x + App.left_margin + (cell_x * App.note_w) - App.scroll_x
 					local preview_y = App.editor_win_y + App.top_margin + (cell_y * App.note_h) - 5
 					reaper.ImGui_DrawList_AddRectFilled(draw_list, preview_x, preview_y, preview_x + App.note_w - 1, preview_y + App.note_h - 1, Colors.note_preview, 40)
+					
+					if App.attempts_paste then
+						reaper.ImGui_BeginTooltip(App.ctx)
+						reaper.ImGui_Text(App.ctx, "Select position to paste. [ESC] to cancel")
+						reaper.ImGui_EndTooltip(App.ctx)
+					end
 				end
 				if reaper.ImGui_IsMouseClicked(App.ctx, 0) then
 					Editor.OnMouseButtonClick(e_MouseButton.Left, cell_x, cell_y)
@@ -268,7 +280,7 @@ function UI.Render_Editor()
 		if reaper.ImGui_IsMouseDragging(App.ctx, 1) then
 			Editor.OnMouseButtonDrag(e_MouseButton.Right)
 		end
-
+		
 		-- Mask rect
 		reaper.ImGui_DrawList_AddRectFilled(draw_list, App.editor_win_x, App.editor_win_y + 2, App.editor_win_x + App.left_margin, App.editor_win_y + 140, Colors.bg)
 		

@@ -11,8 +11,6 @@
 -- Allow multiple selection with marquee. Don't mimic riffer exact behavior. (it always sets leftmost note as the "active" one?)
 -- Also, auto-scroll when marquee is close to editor edges
 --
--- Implement Undo system. Shouldn't keep selection. Just clear selection if a deleted note was selected.
---
 -- Clamp moving notes. They currently can end out of the editor boundaries and can overlap each other.
 -- 
 -- Current dragging system allows each note's properties to be clamped individually
@@ -35,6 +33,7 @@ dofile(script_path .. "Toolbar.lua")
 dofile(script_path .. "Util.lua")
 dofile(script_path .. "Editor.lua")
 dofile(script_path .. "UndoRedo.lua")
+dofile(script_path .. "Clipboard.lua")
 
 App.Init()
 reaper.defer(App.Loop)

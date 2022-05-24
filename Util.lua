@@ -93,15 +93,28 @@ function Util.IsCellEmpty(cx, cy, duration_inclusive)
 	return true
 end
 
--- TODO Need to do Left direction too. (Or not?)
-function Util.GetCellNearestOccupied(cx, cy, direction)
-	local cur = Util.NumGridDivisions()
+function Util.GetCellNearestOccupied(cx, cy, direction, note_idx)
 	
 	if direction == e_Direction.Right then
+		local cur = Util.NumGridDivisions()
+		
 		for i, note in ipairs(App.note_list) do
 			if (cy == note.string_idx) and (note.offset > cx) then
-				if note.offset < cur then
+				if note.offset < cur and i ~= note_idx then
 					cur = note.offset
+				end
+			end
+		end
+		return cur
+	end
+	
+	if direction == e_Direction.Left then
+		local cur = 0
+
+		for i, note in ipairs(App.note_list) do
+			if (cy == note.string_idx) and (note.offset <= cx) then
+				if note.offset + note.duration > cur and i ~= note_idx then
+					cur = note.offset + note.duration
 				end
 			end
 		end
@@ -114,16 +127,16 @@ function Util.CreateMIDI()
 	local q = {0.25, 0.5, 1, 2, 4, 8, 16}
 	-- {"1/1", "1/2", "1/4", "1/8", "1/16", "1/32", "1/64"},
 	ratio = ppq / q[App.quantize_cur_idx]
-
+	
 	local track = reaper.GetSelectedTrack(0, 0)
 	if track == nil then return; end
-
+	
 	local start_time_secs = reaper.GetCursorPositionEx(0)
 	local end_time_secs = reaper.TimeMap2_beatsToTime(0, 0, App.num_measures)
 	local new_item = reaper.CreateNewMIDIItemInProj(track, start_time_secs, start_time_secs + end_time_secs)
 	local take = reaper.GetActiveTake(new_item)
 	local start_ppq = reaper.MIDI_GetPPQPosFromProjTime(take, start_time_secs)
-
+	
 	local note_begin
 	local note_end
 	
@@ -154,7 +167,7 @@ function Util.CopyTable(t)
 	for i, v in ipairs(t) do
 		new_t[i] = v
 	end
-
+	
 	return new_t
 end
 
@@ -186,7 +199,7 @@ function Util.GetNoteIndexAtCell(cx, cy)
 			return i
 		end
 	end
-
+	
 	return 0 -- Not found
 end
 
@@ -210,11 +223,11 @@ end
 
 function Util.ShiftOctaveIfOutsideRange(note, target_string_idx)
 	if note.string_idx == target_string_idx then return; end
-
+	
 	local min_pitch = App.instrument[App.num_strings - 3].open[App.num_strings - target_string_idx]
 	local max_pitch = min_pitch + 24
-
-
+	
+	
 	if note.pitch > min_pitch and note.pitch > max_pitch then
 		Editor.StopNote()
 		note.pitch = note.pitch - 12

@@ -20,6 +20,7 @@ end
 
 function UR.PopUndo()
 	if #UR.undo_stack == 0 then return; end
+	
 	local last_rec = UR.undo_stack[#UR.undo_stack]
 	local type = last_rec.type
 	
@@ -64,7 +65,7 @@ function UR.PopUndo()
 			v.off_velocity = temp.off_velocity
 		end
 	end
-
+	
 	if type == e_OpType.Move then
 		local temp = {}
 		--NOTE pitch may be modified by moving note to different string. So we account for that too
@@ -108,14 +109,15 @@ function UR.PopRedo()
 	end
 	
 	if type == e_OpType.Delete then
-		for i, v in ipairs(last_rec.note_list) do
-			table.remove(App.note_list, v.idx)
+		local len = #last_rec.note_list
+		for i = len, 1, -1 do
+			table.remove(App.note_list, last_rec.note_list[i].idx)
 		end
 	end
 	
 	if type == e_OpType.ModifyPitchAndDuration then
 		local temp = {}
-
+		
 		for i, v in ipairs(last_rec.note_list) do
 			temp.pitch = App.note_list[v.idx].pitch
 			temp.duration = App.note_list[v.idx].duration
@@ -130,7 +132,7 @@ function UR.PopRedo()
 	
 	if type == e_OpType.ModifyVelocityAndOffVelocity then
 		local temp = {}
-
+		
 		for i, v in ipairs(last_rec.note_list) do
 			temp.velocity = App.note_list[v.idx].velocity
 			temp.off_velocity = App.note_list[v.idx].off_velocity
@@ -142,10 +144,10 @@ function UR.PopRedo()
 			v.off_velocity = temp.off_velocity
 		end
 	end
-
+	
 	if type == e_OpType.Move then
 		local temp = {}
-
+		
 		for i, v in ipairs(last_rec.note_list) do
 			temp.offset = App.note_list[v.idx].offset
 			temp.string_idx = App.note_list[v.idx].string_idx

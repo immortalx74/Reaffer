@@ -18,6 +18,7 @@ App =
 	current_pitch = 0,
 	is_new_note = false,
 	last_click_was_inside_editor = false,
+	attempts_paste = false,
 	
 	-- metrics
 	window_w = 800,
@@ -111,19 +112,38 @@ function App.Loop()
 		App.mouse_x, App.mouse_y = reaper.ImGui_GetMousePos(App.ctx)
 		App.window_w = reaper.ImGui_GetWindowWidth(App.ctx)
 		
-		-- if reaper.ImGui_GetKeyMods(App.ctx) == reaper.ImGui_KeyModFlags_Ctrl() and reaper.ImGui_IsKeyPressed(App.ctx, reaper.ImGui_Key_Z()) then
-		-- 	UR.PopUndo()
-		-- end
-		-- if reaper.ImGui_GetKeyMods(App.ctx) == reaper.ImGui_KeyModFlags_Ctrl() + reaper.ImGui_KeyModFlags_Shift() and reaper.ImGui_IsKeyPressed(App.ctx, reaper.ImGui_Key_Z()) then
-		-- 	UR.PopRedo()
-		-- end
 		if reaper.ImGui_IsKeyDown(App.ctx, reaper.ImGui_Key_ModCtrl()) and not reaper.ImGui_IsKeyDown(App.ctx, reaper.ImGui_Key_ModShift()) and reaper.ImGui_IsKeyPressed(App.ctx, reaper.ImGui_Key_Z()) then
-			msg("undo")
+			UR.PopUndo()
 		end
 		if reaper.ImGui_IsKeyDown(App.ctx, reaper.ImGui_Key_ModCtrl()) and reaper.ImGui_IsKeyDown(App.ctx, reaper.ImGui_Key_ModShift()) and reaper.ImGui_IsKeyPressed(App.ctx, reaper.ImGui_Key_Z()) then
-			msg("redo")
+			UR.PopRedo()
 		end
-
+		if reaper.ImGui_IsKeyDown(App.ctx, reaper.ImGui_Key_ModCtrl()) and reaper.ImGui_IsKeyPressed(App.ctx, reaper.ImGui_Key_C()) then
+			Clipboard.Copy()
+		end
+		if reaper.ImGui_IsKeyDown(App.ctx, reaper.ImGui_Key_ModCtrl()) and reaper.ImGui_IsKeyPressed(App.ctx, reaper.ImGui_Key_X()) then
+			Clipboard.Cut()
+		end
+		if reaper.ImGui_IsKeyDown(App.ctx, reaper.ImGui_Key_ModCtrl()) and reaper.ImGui_IsKeyPressed(App.ctx, reaper.ImGui_Key_V()) then
+			if #Clipboard.note_list > 0 then App.attempts_paste = true; end
+		end
+		
+		if reaper.ImGui_IsKeyPressed(App.ctx, reaper.ImGui_Key_S()) then
+			App.active_tool = e_Tool.Select
+		end
+		if reaper.ImGui_IsKeyPressed(App.ctx, reaper.ImGui_Key_D()) then
+			App.active_tool = e_Tool.Draw
+		end
+		if reaper.ImGui_IsKeyPressed(App.ctx, reaper.ImGui_Key_E()) then
+			App.active_tool = e_Tool.Erase
+		end
+		if reaper.ImGui_IsKeyPressed(App.ctx, reaper.ImGui_Key_W()) then
+			App.active_tool = e_Tool.Move
+		end
+		if reaper.ImGui_IsKeyPressed(App.ctx, reaper.ImGui_Key_Escape()) then
+			App.attempts_paste = false
+		end
+		
 		UI.Render_CB_Strings()
 		UI.Render_CB_Signature()
 		UI.Render_CB_Quantize()
@@ -134,6 +154,46 @@ function App.Loop()
 		UI.Render_Editor()
 		UI.Render_Toolbar()
 		
+		---------------------
+		if reaper.ImGui_BeginListBox(App.ctx, "Undo stack", 300, 200 ) then
+			if #UR.undo_stack > 0 then
+				for i, v in ipairs(UR.undo_stack) do
+					local rec = v.note_list
+					reaper.ImGui_Text(App.ctx, "[Rec: " .. i .. ", Type: " .. v.type .. "]")
+					for j, m in ipairs(rec) do
+						reaper.ImGui_Text(App.ctx, "	Note: idx = " .. rec[j].idx)
+					end
+				end
+			end
+			reaper.ImGui_EndListBox(App.ctx)
+		end
+		
+		reaper.ImGui_SameLine(App.ctx)
+		
+		if reaper.ImGui_BeginListBox(App.ctx, "Redo stack", 300, 200 ) then
+			if #UR.redo_stack > 0 then
+				for i, v in ipairs(UR.redo_stack) do
+					local rec = v.note_list
+					reaper.ImGui_Text(App.ctx, "[Rec: " .. i .. ", Type: " .. v.type .. "]")
+					for j, m in ipairs(rec) do
+						reaper.ImGui_Text(App.ctx, "	Note: idx = " .. rec[j].idx)
+					end
+				end
+			end
+			reaper.ImGui_EndListBox(App.ctx)
+		end
+		
+		if reaper.ImGui_BeginListBox(App.ctx, "Clipboard", 300, 200 ) then
+			if #Clipboard.note_list > 0 then
+				for i, v in ipairs(Clipboard.note_list) do
+					-- local note = v.note_list
+					reaper.ImGui_Text(App.ctx, "Note: " .. Clipboard.note_list[i].idx)
+				end
+			end
+			reaper.ImGui_EndListBox(App.ctx)
+		end
+		---------------------
+		
 		App.mouse_prev_x, App.mouse_prev_y = App.mouse_x, App.mouse_y
 		reaper.ImGui_End(App.ctx)	
 	end
@@ -142,6 +202,5 @@ function App.Loop()
 		reaper.defer(App.Loop)
 	else
 		reaper.ImGui_DestroyContext(App.ctx)
-		-- reaper.ImGui_DetachFont(App.ctx, App.icon_font)
 	end
 end
