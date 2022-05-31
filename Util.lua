@@ -135,7 +135,7 @@ function Util.IsNewPositionOnStringEmpty(note_idx, new_x, y)
 			end
 		end
 	end
-
+	
 	return true
 end
 

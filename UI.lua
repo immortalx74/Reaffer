@@ -247,10 +247,11 @@ function UI.Render_Editor()
 				if Util.IsCellEmpty(cell_x, cell_y, true) then
 					if App.attempts_paste then
 						-- reaper.ImGui_DrawList_AddLine(draw_list, preview_x, App.editor_win_y + App.top_margin, preview_x, App.editor_win_y + App.top_margin + ((App.num_strings - 1) * App.lane_v_spacing), Colors.red)
-						local leftmost = Util.NumGridDivisions()
-						for i, v in ipairs(Clipboard.note_list) do
-							if v.offset < leftmost then leftmost = v.offset; end
-						end
+						-- local leftmost = Util.NumGridDivisions()
+						-- for i, v in ipairs(Clipboard.note_list) do
+						-- 	if v.offset < leftmost then leftmost = v.offset; end
+						-- end
+						local leftmost = Clipboard.note_list[1].offset
 						
 						for i, v in ipairs(Clipboard.note_list) do
 							local cur_x = App.editor_win_x + App.left_margin + ((v.offset + cell_x - leftmost) * App.note_w) - App.scroll_x
