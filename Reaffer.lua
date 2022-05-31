@@ -18,6 +18,8 @@
 -- There's currently no way to change tuning. Not an easy way to do that.
 -- What happens to the notes that fall outside of a string's range,
 -- when you change tuning during a session? Needs thinking
+--
+-- When pasting notes, clear current selection and select pasted notes
 
 function msg(txt)
 	reaper.ShowConsoleMsg(tostring(txt) .. "\n")

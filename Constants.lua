@@ -51,6 +51,7 @@ Colors =
 	bg = 0x0F0F0FFF,
 	active_tool = 0x3D85E0FF,
 	note_preview = 0xFFFFFF88,
+	note_preview_paste = 0xAAAAAA55,
 	red = 0xFF0000FF,
 	text = 0xFFFFFFFF
 }

@@ -245,15 +245,26 @@ function UI.Render_Editor()
 			
 			if App.mouse_x > rect_x1 and App.mouse_x < rect_x2  and App.mouse_y > rect_y1 and App.mouse_y < rect_y2  then
 				if Util.IsCellEmpty(cell_x, cell_y, true) then
-					local preview_x = App.editor_win_x + App.left_margin + (cell_x * App.note_w) - App.scroll_x
-					local preview_y = App.editor_win_y + App.top_margin + (cell_y * App.note_h) - 5
-					reaper.ImGui_DrawList_AddRectFilled(draw_list, preview_x, preview_y, preview_x + App.note_w - 1, preview_y + App.note_h - 1, Colors.note_preview, 40)
-					
 					if App.attempts_paste then
-						reaper.ImGui_DrawList_AddLine(draw_list, preview_x, App.editor_win_y + App.top_margin, preview_x, App.editor_win_y + App.top_margin + ((App.num_strings - 1) * App.lane_v_spacing), Colors.red)
+						-- reaper.ImGui_DrawList_AddLine(draw_list, preview_x, App.editor_win_y + App.top_margin, preview_x, App.editor_win_y + App.top_margin + ((App.num_strings - 1) * App.lane_v_spacing), Colors.red)
+						local leftmost = Util.NumGridDivisions()
+						for i, v in ipairs(Clipboard.note_list) do
+							if v.offset < leftmost then leftmost = v.offset; end
+						end
+						
+						for i, v in ipairs(Clipboard.note_list) do
+							local cur_x = App.editor_win_x + App.left_margin + ((v.offset + cell_x - leftmost) * App.note_w) - App.scroll_x
+							local cur_y = App.editor_win_y + App.top_margin + (v.string_idx * App.note_h) - 5
+							reaper.ImGui_DrawList_AddRectFilled(draw_list, cur_x, cur_y, cur_x + (v.duration * App.note_w) - 1, cur_y + App.note_h - 1, Colors.note_preview_paste, 40)
+						end
+						
 						reaper.ImGui_BeginTooltip(App.ctx)
 						reaper.ImGui_Text(App.ctx, "Select position to paste. [ESC] to cancel")
 						reaper.ImGui_EndTooltip(App.ctx)
+					else
+						local preview_x = App.editor_win_x + App.left_margin + (cell_x * App.note_w) - App.scroll_x
+						local preview_y = App.editor_win_y + App.top_margin + (cell_y * App.note_h) - 5
+						reaper.ImGui_DrawList_AddRectFilled(draw_list, preview_x, preview_y, preview_x + App.note_w - 1, preview_y + App.note_h - 1, Colors.note_preview, 40)
 					end
 				end
 				if reaper.ImGui_IsMouseClicked(App.ctx, 0) then
