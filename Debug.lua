@@ -1,4 +1,4 @@
-Debug = {enabled = false}
+Debug = {enabled = true}
 
 function Debug.ShowContainers()
 	local opt = {"Insert", "Delete", "Pitch + dur", "Vel", "Move"}

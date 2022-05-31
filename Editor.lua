@@ -79,17 +79,15 @@ end
 
 function Editor.SelectNotes(cx, cy)
 	for i, note in ipairs(App.note_list) do
-		if (cx >= note.offset) and (cx < note.offset + note.duration) and (cy == note.string_idx) then
+		if (cx >= note.offset) and (cx < note.offset + note.duration) and (cy == note.string_idx) and not (Util.IsNoteAtCellSelected(note.offset, note.string_idx)) then
 			if reaper.ImGui_IsKeyDown(App.ctx, reaper.ImGui_Key_ModCtrl()) then
 				App.note_list_selected[#App.note_list_selected + 1] = Util.CopyNote(note)
 				App.note_list_selected.indices[#App.note_list_selected.indices + 1] = i
 			else
-				if not (Util.IsNoteAtCellSelected(note.offset, note.string_idx)) then
-					Util.ClearTable(App.note_list_selected)
-					Util.ClearTable(App.note_list_selected.indices)
-					App.note_list_selected[#App.note_list_selected + 1] = Util.CopyNote(note)
-					App.note_list_selected.indices[#App.note_list_selected.indices + 1] = i
-				end
+				Util.ClearTable(App.note_list_selected)
+				Util.ClearTable(App.note_list_selected.indices)
+				App.note_list_selected[#App.note_list_selected + 1] = Util.CopyNote(note)
+				App.note_list_selected.indices[#App.note_list_selected.indices + 1] = i
 			end
 			App.last_note_clicked = Util.CopyNote(note)
 			App.last_note_clicked.idx = i

@@ -18,8 +18,6 @@
 -- There's currently no way to change tuning. Not an easy way to do that.
 -- What happens to the notes that fall outside of a string's range,
 -- when you change tuning during a session? Needs thinking
---
--- BUG: When releasing and pressing again Ctrl, and clicking an already selected note, it gets re-added to note_list_selected.
 
 function msg(txt)
 	reaper.ShowConsoleMsg(tostring(txt) .. "\n")
