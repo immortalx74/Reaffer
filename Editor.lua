@@ -52,6 +52,7 @@ function Editor.OnMouseButtonRelease(mbutton)
 			
 			App.is_new_note = false
 			Util.UpdateSelectedNotes()
+			UR.last_op = e_OpType.NoOp
 		end
 	end
 end
@@ -138,86 +139,98 @@ function Editor.EraseNotes(cx, cy)
 end
 
 function Editor.MoveNotes(cx, cy, dx, dy)
-	local all_fit = true
-	local base_diff = dx + App.last_note_clicked.duration - 1
-	local leftmost = Util.NumGridDivisions(); local topmost = App.num_strings - 1; local rightmost = 0; local bottommost = 0
-	
-	for i, v in ipairs(App.note_list_selected) do
-		local idx = App.note_list_selected.indices[i]
-		if App.note_list[idx].offset < leftmost then leftmost = App.note_list[idx].offset; end
-		if App.note_list[idx].offset + App.note_list[idx].duration - 1 > rightmost then rightmost = App.note_list[idx].offset + App.note_list[idx].duration - 1; end
-		if App.note_list[idx].string_idx < topmost then topmost = App.note_list[idx].string_idx; end
-		if App.note_list[idx].string_idx > bottommost then bottommost = App.note_list[idx].string_idx; end
+	if dx ~= 0 or dy ~= 0 then
+		local all_fit = true
+		local base_diff = dx + App.last_note_clicked.duration - 1
+		local leftmost = Util.NumGridDivisions(); local topmost = App.num_strings - 1; local rightmost = 0; local bottommost = 0
 		
-		if not Util.IsNewPositionOnStringEmpty(App.note_list_selected.indices[i], v.offset + base_diff, v.string_idx - dy) then
-			all_fit = false
-			break
-		end
-	end
-	
-	local base_x = App.note_list[App.last_note_clicked.idx].offset
-	local base_y = App.note_list[App.last_note_clicked.idx].string_idx
-	local l_bound = base_x - leftmost
-	local r_bound = Util.NumGridDivisions() - rightmost + base_x
-	local t_bound = base_y - topmost
-	local b_bound = App.num_strings - bottommost + base_y
-	
-	if all_fit then
-		if cx >= l_bound and cx < r_bound and cy >= t_bound and cy < b_bound then
-			for i, v in ipairs(App.note_list_selected) do
-				local idx = App.note_list_selected.indices[i]
-				App.note_list[idx].offset = v.offset + dx + App.last_note_clicked.duration - 1
-				
-				local dst_string_idx = Util.Clamp(v.string_idx - dy, 0, App.num_strings - 1)
-				Util.ShiftOctaveIfOutsideRange(App.note_list[idx], dst_string_idx)
-				App.note_list[idx].string_idx = dst_string_idx
+		for i, v in ipairs(App.note_list_selected) do
+			local idx = App.note_list_selected.indices[i]
+			if App.note_list[idx].offset < leftmost then leftmost = App.note_list[idx].offset; end
+			if App.note_list[idx].offset + App.note_list[idx].duration - 1 > rightmost then rightmost = App.note_list[idx].offset + App.note_list[idx].duration - 1; end
+			if App.note_list[idx].string_idx < topmost then topmost = App.note_list[idx].string_idx; end
+			if App.note_list[idx].string_idx > bottommost then bottommost = App.note_list[idx].string_idx; end
+			
+			if not Util.IsNewPositionOnStringEmpty(App.note_list_selected.indices[i], v.offset + base_diff, v.string_idx - dy) then
+				all_fit = false
+				break
 			end
 		end
 		
-		UR.last_op = e_OpType.Move
+		local base_x = App.note_list[App.last_note_clicked.idx].offset
+		local base_y = App.note_list[App.last_note_clicked.idx].string_idx
+		local l_bound = base_x - leftmost
+		local r_bound = Util.NumGridDivisions() - rightmost + base_x
+		local t_bound = base_y - topmost
+		local b_bound = App.num_strings - bottommost + base_y
+		
+		if all_fit then
+			if cx >= l_bound and cx < r_bound and cy >= t_bound and cy < b_bound then
+				for i, v in ipairs(App.note_list_selected) do
+					local idx = App.note_list_selected.indices[i]
+					App.note_list[idx].offset = v.offset + dx + App.last_note_clicked.duration - 1
+					
+					local dst_string_idx = Util.Clamp(v.string_idx - dy, 0, App.num_strings - 1)
+					Util.ShiftOctaveIfOutsideRange(App.note_list[idx], dst_string_idx)
+					App.note_list[idx].string_idx = dst_string_idx
+				end
+			end
+			
+			UR.last_op = e_OpType.Move
+		end
+	else
+		UR.last_op = e_OpType.NoOp
 	end
 end
 
 function Editor.ModifyPitchAndDuration(cx, cy, dx, dy)
-	for i, v in ipairs(App.note_list_selected) do
-		
-		-- duration
-		local idx = Util.GetNoteIndexAtCell(v.offset, v.string_idx)
-		
-		local nearest = Util.GetCellNearestOccupied(App.note_list[idx].offset, App.note_list[idx].string_idx, e_Direction.Right)
-		if cx >= App.last_note_clicked.offset then
-			App.note_list[idx].duration = Util.Clamp(v.duration + dx, 1, nearest - App.note_list[idx].offset)
+	if dx ~= 0 or dy ~= 0 then
+		for i, v in ipairs(App.note_list_selected) do
+			
+			-- duration
+			local idx = Util.GetNoteIndexAtCell(v.offset, v.string_idx)
+			
+			local nearest = Util.GetCellNearestOccupied(App.note_list[idx].offset, App.note_list[idx].string_idx, e_Direction.Right)
+			if cx >= App.last_note_clicked.offset then
+				App.note_list[idx].duration = Util.Clamp(v.duration + dx, 1, nearest - App.note_list[idx].offset)
+			end
+			-- pitch
+			local pitch_min = App.instrument[App.num_strings - 3].open[App.num_strings - App.note_list[idx].string_idx]
+			local pitch_max = pitch_min + 24
+			App.note_list[idx].pitch = Util.Clamp(v.pitch + dy, pitch_min, pitch_max)
+			Util.UpdateRecentPitch(App.num_strings - v.string_idx, App.note_list[idx].pitch)
 		end
-		-- pitch
-		local pitch_min = App.instrument[App.num_strings - 3].open[App.num_strings - App.note_list[idx].string_idx]
-		local pitch_max = pitch_min + 24
-		App.note_list[idx].pitch = Util.Clamp(v.pitch + dy, pitch_min, pitch_max)
-		Util.UpdateRecentPitch(App.num_strings - v.string_idx, App.note_list[idx].pitch)
-	end
-	
-	UR.last_op = e_OpType.ModifyPitchAndDuration
-	
-	local idx = Util.GetNoteIndexAtCell(App.last_note_clicked.offset, App.last_note_clicked.string_idx)
-	
-	if App.current_pitch ~= App.note_list[idx].pitch then
-		Editor.StopNote()
-		App.current_pitch = App.note_list[idx].pitch
-		Editor.PlayNote()
+		
+		local idx = Util.GetNoteIndexAtCell(App.last_note_clicked.offset, App.last_note_clicked.string_idx)
+		
+		if App.current_pitch ~= App.note_list[idx].pitch then
+			Editor.StopNote()
+			App.current_pitch = App.note_list[idx].pitch
+			Editor.PlayNote()
+		end
+		
+		UR.last_op = e_OpType.ModifyPitchAndDuration
+	else
+		UR.last_op = e_OpType.NoOp
 	end
 end
 
 function Editor.ModifyVelocityAndOffVelocity(cx, cy, dx, dy)
-	for i, v in ipairs(App.note_list_selected) do
-		local idx = Util.GetNoteIndexAtCell(v.offset, v.string_idx)
-		
-		if reaper.ImGui_IsKeyDown(App.ctx, reaper.ImGui_Key_ModShift()) then
-			App.note_list[idx].off_velocity = Util.Clamp(v.off_velocity + dy, 0, 127)
-		else
-			App.note_list[idx].velocity = Util.Clamp(v.velocity + dy, 0, 127)
+	if dy ~= 0 then
+		for i, v in ipairs(App.note_list_selected) do
+			local idx = Util.GetNoteIndexAtCell(v.offset, v.string_idx)
+			
+			if reaper.ImGui_IsKeyDown(App.ctx, reaper.ImGui_Key_ModShift()) then
+				App.note_list[idx].off_velocity = Util.Clamp(v.off_velocity + dy, 0, 127)
+			else
+				App.note_list[idx].velocity = Util.Clamp(v.velocity + dy, 0, 127)
+			end
 		end
+		
+		UR.last_op = e_OpType.ModifyVelocityAndOffVelocity
+	else
+		UR.last_op = e_OpType.NoOp
 	end
-	
-	UR.last_op = e_OpType.ModifyVelocityAndOffVelocity
 end
 
 function Editor.PlayNote()

@@ -1,7 +1,7 @@
-Debug = {enabled = true}
+Debug = {enabled = false}
 
 function Debug.ShowContainers()
-	local opt = {"Insert", "Delete", "Pitch + dur", "Vel", "Move"}
+	local opt = {"NoOp", "Insert", "Delete", "Pitch + dur", "Vel", "Move"}
 	if reaper.ImGui_BeginListBox(App.ctx, "Undo stack", 300, 200 ) then
 		if #UR.undo_stack > 0 then
 			for i, v in ipairs(UR.undo_stack) do

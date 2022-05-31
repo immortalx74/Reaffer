@@ -37,11 +37,12 @@ e_MouseButton =
 
 e_OpType = 
 {
-	Insert = 1,
-	Delete = 2,
-	ModifyPitchAndDuration = 3,
-	ModifyVelocityAndOffVelocity = 4,
-	Move = 5
+	NoOp = 1,
+	Insert = 2,
+	Delete = 3,
+	ModifyPitchAndDuration = 4,
+	ModifyVelocityAndOffVelocity = 5,
+	Move = 6
 	-- more here...
 }
 
