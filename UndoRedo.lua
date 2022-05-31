@@ -3,18 +3,25 @@ UR =
 	last_op = nil,
 	undo_stack = {},
 	redo_stack = {}
-	-- {type = ?, note_list = {	{idx = ?, offset = ?, etc}, {idx = ?, offset = ?, etc}, ...	}	}
-	-- {type = ?, note_list = {	{idx = ?, offset = ?, etc}, {idx = ?, offset = ?, etc}, ...	}	}
+	-- {type = ?, note_list = {	{offset = ?, etc}, {idx = ?, offset = ?, etc}, ...	}	}
+	-- {type = ?, note_list = {	{offset = ?, etc}, {idx = ?, offset = ?, etc}, ...	}	}
+
+	-- NOTE If the type is move, include indices.
+	-- {type = ?, indices = {}, note_list = {	{offset = ?, etc}, {idx = ?, offset = ?, etc}, ...	}	}
 }
 
 function UR.PushUndo(type, note_list)
 	local new_rec = {type = type, note_list = Util.CopyTable(note_list)}
+	
+	if type == e_OpType.Move then
+		new_rec.indices = Util.CopyTable(note_list.indices)
+	end
+	
 	UR.undo_stack[#UR.undo_stack + 1] = new_rec
 	
 	-- clear redo stack
 	if #UR.redo_stack > 0 then
 		Util.ClearTable(UR.redo_stack)
-		Util.RecalculateStoredNoteIndices()
 	end
 end
 
@@ -32,7 +39,8 @@ function UR.PopUndo()
 	
 	if type == e_OpType.Insert then
 		for i, v in ipairs(last_rec.note_list) do
-			table.remove(App.note_list, v.idx)
+			local idx = Util.GetNoteIndexAtCell(v.offset, v.string_idx)
+			table.remove(App.note_list, idx)
 		end
 	end
 	
@@ -40,11 +48,13 @@ function UR.PopUndo()
 		local temp = {}
 		
 		for i, v in ipairs(last_rec.note_list) do
-			temp.pitch = App.note_list[v.idx].pitch
-			temp.duration = App.note_list[v.idx].duration
+			local idx = Util.GetNoteIndexAtCell(v.offset, v.string_idx)
 			
-			App.note_list[v.idx].pitch = v.pitch
-			App.note_list[v.idx].duration = v.duration
+			temp.pitch = App.note_list[idx].pitch
+			temp.duration = App.note_list[idx].duration
+			
+			App.note_list[idx].pitch = v.pitch
+			App.note_list[idx].duration = v.duration
 			
 			v.pitch = temp.pitch
 			v.duration = temp.duration
@@ -55,11 +65,13 @@ function UR.PopUndo()
 		local temp = {}
 		
 		for i, v in ipairs(last_rec.note_list) do
-			temp.velocity = App.note_list[v.idx].velocity
-			temp.off_velocity = App.note_list[v.idx].off_velocity
+			local idx = Util.GetNoteIndexAtCell(v.offset, v.string_idx)
 			
-			App.note_list[v.idx].velocity = v.velocity
-			App.note_list[v.idx].off_velocity = v.off_velocity
+			temp.velocity = App.note_list[idx].velocity
+			temp.off_velocity = App.note_list[idx].off_velocity
+			
+			App.note_list[idx].velocity = v.velocity
+			App.note_list[idx].off_velocity = v.off_velocity
 			
 			v.velocity = temp.velocity
 			v.off_velocity = temp.off_velocity
@@ -68,15 +80,18 @@ function UR.PopUndo()
 	
 	if type == e_OpType.Move then
 		local temp = {}
-		--NOTE pitch may be modified by moving note to different string. So we account for that too
+		-- pitch may be modified by moving note to different string. So we account for that too
 		for i, v in ipairs(last_rec.note_list) do
-			temp.offset = App.note_list[v.idx].offset
-			temp.string_idx = App.note_list[v.idx].string_idx
-			temp.pitch = App.note_list[v.idx].pitch
+			-- local idx = Util.GetNoteIndexAtCell(v.offset, v.string_idx)
+			local idx = last_rec.indices[i]
 			
-			App.note_list[v.idx].offset = v.offset
-			App.note_list[v.idx].string_idx = v.string_idx
-			App.note_list[v.idx].pitch = v.pitch
+			temp.offset = App.note_list[idx].offset
+			temp.string_idx = App.note_list[idx].string_idx
+			temp.pitch = App.note_list[idx].pitch
+			
+			App.note_list[idx].offset = v.offset
+			App.note_list[idx].string_idx = v.string_idx
+			App.note_list[idx].pitch = v.pitch
 			
 			v.offset = temp.offset
 			v.string_idx = temp.string_idx
@@ -90,9 +105,6 @@ function UR.PopUndo()
 	
 	Util.ClearTable(App.note_list_selected)
 	App.last_note_clicked = nil
-end
-
-function UR.PushRedo()
 end
 
 function UR.PopRedo()
@@ -109,9 +121,9 @@ function UR.PopRedo()
 	end
 	
 	if type == e_OpType.Delete then
-		local len = #last_rec.note_list
-		for i = len, 1, -1 do
-			table.remove(App.note_list, last_rec.note_list[i].idx)
+		for i, v in ipairs(last_rec.note_list) do
+			local idx = Util.GetNoteIndexAtCell(v.offset, v.string_idx)
+			table.remove(App.note_list, idx)
 		end
 	end
 	
@@ -119,11 +131,13 @@ function UR.PopRedo()
 		local temp = {}
 		
 		for i, v in ipairs(last_rec.note_list) do
-			temp.pitch = App.note_list[v.idx].pitch
-			temp.duration = App.note_list[v.idx].duration
+			local idx = Util.GetNoteIndexAtCell(v.offset, v.string_idx)
 			
-			App.note_list[v.idx].pitch = v.pitch
-			App.note_list[v.idx].duration = v.duration
+			temp.pitch = App.note_list[idx].pitch
+			temp.duration = App.note_list[idx].duration
+			
+			App.note_list[idx].pitch = v.pitch
+			App.note_list[idx].duration = v.duration
 			
 			v.pitch = temp.pitch
 			v.duration = temp.duration
@@ -134,11 +148,13 @@ function UR.PopRedo()
 		local temp = {}
 		
 		for i, v in ipairs(last_rec.note_list) do
-			temp.velocity = App.note_list[v.idx].velocity
-			temp.off_velocity = App.note_list[v.idx].off_velocity
+			local idx = Util.GetNoteIndexAtCell(v.offset, v.string_idx)
 			
-			App.note_list[v.idx].velocity = v.velocity
-			App.note_list[v.idx].off_velocity = v.off_velocity
+			temp.velocity = App.note_list[idx].velocity
+			temp.off_velocity = App.note_list[idx].off_velocity
+			
+			App.note_list[idx].velocity = v.velocity
+			App.note_list[idx].off_velocity = v.off_velocity
 			
 			v.velocity = temp.velocity
 			v.off_velocity = temp.off_velocity
@@ -149,13 +165,15 @@ function UR.PopRedo()
 		local temp = {}
 		
 		for i, v in ipairs(last_rec.note_list) do
-			temp.offset = App.note_list[v.idx].offset
-			temp.string_idx = App.note_list[v.idx].string_idx
-			temp.pitch = App.note_list[v.idx].pitch
+			local idx = last_rec.indices[i]
 			
-			App.note_list[v.idx].offset = v.offset
-			App.note_list[v.idx].string_idx = v.string_idx
-			App.note_list[v.idx].pitch = v.pitch
+			temp.offset = App.note_list[idx].offset
+			temp.string_idx = App.note_list[idx].string_idx
+			temp.pitch = App.note_list[idx].pitch
+			
+			App.note_list[idx].offset = v.offset
+			App.note_list[idx].string_idx = v.string_idx
+			App.note_list[idx].pitch = v.pitch
 			
 			v.offset = temp.offset
 			v.string_idx = temp.string_idx

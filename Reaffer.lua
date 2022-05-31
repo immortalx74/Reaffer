@@ -6,8 +6,6 @@
 -- When reducing measure count, keep all notes internally (even those on a higher measure count) and if necessary,
 -- shorten notes duration (ONLY visually) which happen to start on a valid measure, but their duration extends beyond the measure's boundary.
 --
--- Implement Cut, Copy, Paste
---
 -- Allow multiple selection with marquee. Don't mimic riffer exact behavior. (it always sets leftmost note as the "active" one?)
 -- Also, auto-scroll when marquee is close to editor edges
 --
@@ -20,6 +18,8 @@
 -- There's currently no way to change tuning. Not an easy way to do that.
 -- What happens to the notes that fall outside of a string's range,
 -- when you change tuning during a session? Needs thinking
+--
+-- BUG: When releasing and pressing again Ctrl, and clicking an already selected note, it gets re-added to note_list_selected.
 
 function msg(txt)
 	reaper.ShowConsoleMsg(tostring(txt) .. "\n")
@@ -34,6 +34,7 @@ dofile(script_path .. "Util.lua")
 dofile(script_path .. "Editor.lua")
 dofile(script_path .. "UndoRedo.lua")
 dofile(script_path .. "Clipboard.lua")
+dofile(script_path .. "Debug.lua")
 
 App.Init()
 reaper.defer(App.Loop)

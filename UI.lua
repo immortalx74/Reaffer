@@ -32,7 +32,7 @@ function UI.Render_Notes(draw_list)
 			end
 			reaper.ImGui_DrawList_AddText(draw_list, note_x + 5, note_y - 2, Colors.text, str)
 			
-			if Util.IsNoteSelected(note) then
+			if Util.IsNoteSelected(i) then
 				reaper.ImGui_DrawList_AddRect(draw_list, note_x, note_y, note_x + (App.note_w * note.duration) - 1, note_y + App.note_h - 1, Colors.text, 40, reaper.ImGui_DrawFlags_None(), 1)
 			end
 		end
@@ -250,6 +250,7 @@ function UI.Render_Editor()
 					reaper.ImGui_DrawList_AddRectFilled(draw_list, preview_x, preview_y, preview_x + App.note_w - 1, preview_y + App.note_h - 1, Colors.note_preview, 40)
 					
 					if App.attempts_paste then
+						reaper.ImGui_DrawList_AddLine(draw_list, preview_x, App.editor_win_y + App.top_margin, preview_x, App.editor_win_y + App.top_margin + ((App.num_strings - 1) * App.lane_v_spacing), Colors.red)
 						reaper.ImGui_BeginTooltip(App.ctx)
 						reaper.ImGui_Text(App.ctx, "Select position to paste. [ESC] to cancel")
 						reaper.ImGui_EndTooltip(App.ctx)

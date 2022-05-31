@@ -110,9 +110,9 @@ function Util.GetCellNearestOccupied(cx, cy, direction, note_idx)
 	
 	if direction == e_Direction.Left then
 		local cur = 0
-
+		
 		for i, note in ipairs(App.note_list) do
-			if (cy == note.string_idx) and (note.offset <= cx) then
+			if (cy == note.string_idx) and (note.offset < cx) then
 				if note.offset + note.duration > cur and i ~= note_idx then
 					cur = note.offset + note.duration
 				end
@@ -120,6 +120,23 @@ function Util.GetCellNearestOccupied(cx, cy, direction, note_idx)
 		end
 		return cur
 	end
+end
+
+function Util.RangeOverlap(a1, a2, b1, b2)
+	if a2 < b1 or b2 < a1 then return false; end
+	return true
+end
+
+function Util.IsNewPositionOnStringEmpty(note_idx, new_x, y)
+	for i, v in ipairs(App.note_list) do
+		if (y == v.string_idx) and (i ~= note_idx) and not (Util.IsNoteSelected(i)) then -- exclude notes on other strings, self and any selected notes
+			if Util.RangeOverlap(new_x, new_x + App.note_list[note_idx].duration - 1, v.offset, v.offset + v.duration - 1) then
+				return false
+			end
+		end
+	end
+
+	return true
 end
 
 function Util.CreateMIDI()
@@ -152,7 +169,7 @@ function Util.CopyNote(note)
 		msg("note is nil")
 		return
 	end
-	local t = {idx = note.idx, offset = note.offset, string_idx = note.string_idx, pitch = note.pitch, velocity = note.velocity, off_velocity = note.off_velocity, duration = note.duration}
+	local t = {offset = note.offset, string_idx = note.string_idx, pitch = note.pitch, velocity = note.velocity, off_velocity = note.off_velocity, duration = note.duration}
 	return t
 end
 
@@ -171,23 +188,19 @@ function Util.CopyTable(t)
 	return new_t
 end
 
-function Util.IsNoteSelected(note)
-	local idx = note.idx
-	
-	for i, v in ipairs(App.note_list_selected) do
-		if v.idx == idx then
-			return true
-		end
-	end 
-	
-	return false
-end
-
 function Util.IsNoteAtCellSelected(cx, cy)
 	for i, v in ipairs(App.note_list_selected) do
 		if (cx >= v.offset) and (cx < v.offset + v.duration) and (cy == v.string_idx) then
 			return true
 		end
+	end
+	
+	return false
+end
+
+function Util.IsNoteSelected(note_idx)
+	for i, v in ipairs(App.note_list_selected.indices) do
+		if v == note_idx then return true; end
 	end
 	
 	return false
@@ -199,21 +212,16 @@ function Util.GetNoteIndexAtCell(cx, cy)
 			return i
 		end
 	end
-	
+	msg("not found")
 	return 0 -- Not found
 end
 
+-- Refreshes note_list_selected with the (presumably) modified notes from note_list, after mouse release
 function Util.UpdateSelectedNotes()
 	if #App.note_list == 0 or #App.note_list_selected == 0 then return; end
 	for i, v in ipairs(App.note_list_selected) do
-		App.note_list_selected[i] = Util.CopyNote(App.note_list[App.note_list_selected[i].idx])
-	end
-end
-
-function Util.RecalculateStoredNoteIndices()
-	if #App.note_list == 0 then return; end
-	for i, v in ipairs(App.note_list) do
-		v.idx = i
+		local idx = App.note_list_selected.indices[i]
+		App.note_list_selected[i] = Util.CopyNote(App.note_list[idx])
 	end
 end
 

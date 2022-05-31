@@ -46,8 +46,8 @@ App =
 	-- defaults
 	wheel_delta = 50,
 	active_tool = e_Tool.Select,
-	num_strings = 6,
-	num_measures = 4,
+	num_strings = 8,
+	num_measures = 1,
 	quantize_cur_idx = 5,
 	signature_cur_idx = 3,
 	note_display_cur_idx = e_NoteDisplay.Pitch,
@@ -85,14 +85,15 @@ App =
 	
 	note_list =
 	{
-		-- {idx = 1, offset = 6, string_idx = 2, pitch = 25, velocity = 127, off_velocity = 80, duration = 1},
+		-- { offset = 6, string_idx = 2, pitch = 25, velocity = 127, off_velocity = 80, duration = 1},
 	},
 	
 	-- table, storing last clicked note object.
-	-- That's different from last selected, as you can "re-click" an already selected note
+	-- That's different from last selected, as you can "re-click" an already selected note.
+	-- Also, stores an 'idx' field
 	last_note_clicked,
 	
-	note_list_selected = {}
+	note_list_selected = { indices = {} }
 }
 
 function App.Init()
@@ -153,46 +154,7 @@ function App.Loop()
 		UI.Render_TXT_Help()
 		UI.Render_Editor()
 		UI.Render_Toolbar()
-		
-		---------------------
-		if reaper.ImGui_BeginListBox(App.ctx, "Undo stack", 300, 200 ) then
-			if #UR.undo_stack > 0 then
-				for i, v in ipairs(UR.undo_stack) do
-					local rec = v.note_list
-					reaper.ImGui_Text(App.ctx, "[Rec: " .. i .. ", Type: " .. v.type .. "]")
-					for j, m in ipairs(rec) do
-						reaper.ImGui_Text(App.ctx, "	Note: idx = " .. rec[j].idx)
-					end
-				end
-			end
-			reaper.ImGui_EndListBox(App.ctx)
-		end
-		
-		reaper.ImGui_SameLine(App.ctx)
-		
-		if reaper.ImGui_BeginListBox(App.ctx, "Redo stack", 300, 200 ) then
-			if #UR.redo_stack > 0 then
-				for i, v in ipairs(UR.redo_stack) do
-					local rec = v.note_list
-					reaper.ImGui_Text(App.ctx, "[Rec: " .. i .. ", Type: " .. v.type .. "]")
-					for j, m in ipairs(rec) do
-						reaper.ImGui_Text(App.ctx, "	Note: idx = " .. rec[j].idx)
-					end
-				end
-			end
-			reaper.ImGui_EndListBox(App.ctx)
-		end
-		
-		if reaper.ImGui_BeginListBox(App.ctx, "Clipboard", 300, 200 ) then
-			if #Clipboard.note_list > 0 then
-				for i, v in ipairs(Clipboard.note_list) do
-					-- local note = v.note_list
-					reaper.ImGui_Text(App.ctx, "Note: " .. Clipboard.note_list[i].idx)
-				end
-			end
-			reaper.ImGui_EndListBox(App.ctx)
-		end
-		---------------------
+		if Debug.enabled then Debug.ShowContainers(); end
 		
 		App.mouse_prev_x, App.mouse_prev_y = App.mouse_x, App.mouse_y
 		reaper.ImGui_End(App.ctx)	

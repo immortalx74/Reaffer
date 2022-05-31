@@ -7,7 +7,7 @@ ToolBar =
 	{icon = "h", tooltip = "Erase [E]"},
 	{icon = "i", tooltip = "Undo [Ctrl + Z]"},
 	{icon = "j", tooltip = "Redo [Ctrl + Shift + Z]"},
-	{icon = "b", tooltip = "Cut"},
-	{icon = "c", tooltip = "Copy"},
-	{icon = "d", tooltip = "Paste"}
+	{icon = "b", tooltip = "Cut [Ctrl + X]"},
+	{icon = "c", tooltip = "Copy [Ctrl + C]"},
+	{icon = "d", tooltip = "Paste [Ctrl + V]"}
 }
