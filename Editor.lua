@@ -32,6 +32,8 @@ function Editor.OnMouseButtonClick(mbutton, cx, cy)
 end
 
 function Editor.OnMouseButtonRelease(mbutton)
+	App.begin_marquee = false
+	
 	if App.last_click_was_inside_editor then
 		App.can_init_drag = false
 		App.last_click_was_inside_editor = false
@@ -58,12 +60,37 @@ function Editor.OnMouseButtonRelease(mbutton)
 end
 
 function Editor.OnMouseButtonDrag(mbutton)
+	if App.last_click_was_inside_editor then
+		if App.mouse_x > App.editor_win_x + App.window_w - App.scroll_margin then
+			App.scroll_x = App.scroll_x + ((App.mouse_x - (App.editor_win_x + App.window_w - App.scroll_margin)) * App.scroll_speed)
+			reaper.ImGui_SetScrollX(App.ctx, App.scroll_x)
+		end
+		
+		if App.mouse_x < App.editor_win_x + App.left_margin + App.scroll_margin then
+			App.scroll_x = App.scroll_x - ((App.editor_win_x + App.left_margin + App.scroll_margin - App.mouse_x) * App.scroll_speed)
+			reaper.ImGui_SetScrollX(App.ctx, App.scroll_x)
+		end
+	end
+	
+	local cx = Util.GetCellX()
+	local cy = Util.GetCellY()
+	
+	if mbutton == e_MouseButton.Left and App.active_tool == e_Tool.Select then
+		if not (App.begin_marquee) and App.last_note_clicked == nil then
+			App.marquee_box.x1 = App.mouse_x
+			App.marquee_box.y1 = App.mouse_y
+			App.begin_marquee = true
+		end
+		
+		if App.begin_marquee then
+			Editor.MarqueeSelectNotes(cx, cy)
+		end
+	end
+	
 	if App.last_note_clicked == nil then return; end
 	App.can_init_drag = false
 	
-	-- cx/cy = current pos, dx/dy = difference from initial pos
-	local cx = Util.GetCellX()
-	local cy = Util.GetCellY()
+	-- dx/dy = difference from initial pos
 	local dx = cx - App.last_note_clicked.duration - App.last_note_clicked.offset + 1
 	local dy = App.last_note_clicked.string_idx - cy
 	
@@ -75,6 +102,30 @@ function Editor.OnMouseButtonDrag(mbutton)
 		end
 	elseif mbutton == e_MouseButton.Right then
 		Editor.ModifyVelocityAndOffVelocity(cx, cy, dx, dy)
+	end
+end
+
+function Editor.MarqueeSelectNotes(cx, cy)
+	Util.ClearTable(App.note_list_selected)
+	Util.ClearTable(App.note_list_selected.indices)
+	
+	local start_x = math.min(App.marquee_box.x1, App.marquee_box.x2)
+	local start_y = math.min(App.marquee_box.y1, App.marquee_box.y2)
+	local end_x = math.max(App.marquee_box.x1, App.marquee_box.x2)
+	local end_y = math.max(App.marquee_box.y1, App.marquee_box.y2)
+	
+	local cell_x_min = math.floor((start_x - App.editor_win_x + App.scroll_x -15) / App.note_w) - 1
+	local cell_y_min = math.floor((start_y - App.editor_win_y - App.top_margin + 5) / App.note_h)
+	local cell_x_max = math.floor((end_x - App.editor_win_x + App.scroll_x -15) / App.note_w) - 1
+	local cell_y_max = math.floor((end_y - App.editor_win_y - App.top_margin + 5) / App.note_h)
+	
+	for i, v in ipairs(App.note_list) do
+		if not (Util.IsNoteAtCellSelected(v.offset, v.string_idx)) then
+			if Util.RangeOverlap(v.offset, v.offset + v.duration - 1, cell_x_min, cell_x_max) and Util.RangeOverlap(v.string_idx, v.string_idx, cell_y_min, cell_y_max) then	
+				App.note_list_selected[#App.note_list_selected + 1] = Util.CopyNote(v)
+				App.note_list_selected.indices[#App.note_list_selected.indices + 1] = i
+			end
+		end
 	end
 end
 

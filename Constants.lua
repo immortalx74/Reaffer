@@ -54,5 +54,6 @@ Colors =
 	note_preview = 0xFFFFFF88,
 	note_preview_paste = 0xAAAAAA55,
 	red = 0xFF0000FF,
-	text = 0xFFFFFFFF
+	text = 0xFFFFFFFF,
+	marquee_box = 0xFFFFFF44
 }

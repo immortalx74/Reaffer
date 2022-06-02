@@ -19,6 +19,7 @@ App =
 	is_new_note = false,
 	last_click_was_inside_editor = false,
 	attempts_paste = false,
+	begin_marquee = false,
 	
 	-- metrics
 	window_w = 800,
@@ -45,8 +46,10 @@ App =
 	
 	-- defaults
 	wheel_delta = 50,
+	scroll_margin = 50,
+	scroll_speed = 0.25,
 	active_tool = e_Tool.Select,
-	num_strings = 8,
+	num_strings = 6,
 	num_measures = 4,
 	quantize_cur_idx = 5,
 	signature_cur_idx = 3,
@@ -93,7 +96,8 @@ App =
 	-- Also, stores an 'idx' field
 	last_note_clicked,
 	
-	note_list_selected = { indices = {} }
+	note_list_selected = { indices = {} },
+	marquee_box = {x1 = 0, y1 = 0, x2 = 0, y2 = 0}
 }
 
 function App.Init()
@@ -113,38 +117,8 @@ function App.Loop()
 		App.mouse_x, App.mouse_y = reaper.ImGui_GetMousePos(App.ctx)
 		App.window_w = reaper.ImGui_GetWindowWidth(App.ctx)
 		
-		if reaper.ImGui_IsKeyDown(App.ctx, reaper.ImGui_Key_ModCtrl()) and not reaper.ImGui_IsKeyDown(App.ctx, reaper.ImGui_Key_ModShift()) and reaper.ImGui_IsKeyPressed(App.ctx, reaper.ImGui_Key_Z()) then
-			UR.PopUndo()
-		end
-		if reaper.ImGui_IsKeyDown(App.ctx, reaper.ImGui_Key_ModCtrl()) and reaper.ImGui_IsKeyDown(App.ctx, reaper.ImGui_Key_ModShift()) and reaper.ImGui_IsKeyPressed(App.ctx, reaper.ImGui_Key_Z()) then
-			UR.PopRedo()
-		end
-		if reaper.ImGui_IsKeyDown(App.ctx, reaper.ImGui_Key_ModCtrl()) and reaper.ImGui_IsKeyPressed(App.ctx, reaper.ImGui_Key_C()) then
-			Clipboard.Copy()
-		end
-		if reaper.ImGui_IsKeyDown(App.ctx, reaper.ImGui_Key_ModCtrl()) and reaper.ImGui_IsKeyPressed(App.ctx, reaper.ImGui_Key_X()) then
-			Clipboard.Cut()
-		end
-		if reaper.ImGui_IsKeyDown(App.ctx, reaper.ImGui_Key_ModCtrl()) and reaper.ImGui_IsKeyPressed(App.ctx, reaper.ImGui_Key_V()) then
-			if #Clipboard.note_list > 0 then App.attempts_paste = true; end
-		end
-		
-		if reaper.ImGui_IsKeyPressed(App.ctx, reaper.ImGui_Key_S()) then
-			App.active_tool = e_Tool.Select
-		end
-		if reaper.ImGui_IsKeyPressed(App.ctx, reaper.ImGui_Key_D()) then
-			App.active_tool = e_Tool.Draw
-		end
-		if reaper.ImGui_IsKeyPressed(App.ctx, reaper.ImGui_Key_E()) then
-			App.active_tool = e_Tool.Erase
-		end
-		if reaper.ImGui_IsKeyPressed(App.ctx, reaper.ImGui_Key_W()) then
-			App.active_tool = e_Tool.Move
-		end
-		if reaper.ImGui_IsKeyPressed(App.ctx, reaper.ImGui_Key_Escape()) then
-			App.attempts_paste = false
-		end
-		
+		Input.GetShortcuts()
+
 		UI.Render_CB_Strings()
 		UI.Render_CB_Signature()
 		UI.Render_CB_Quantize()
@@ -154,7 +128,7 @@ function App.Loop()
 		UI.Render_TXT_Help()
 		UI.Render_Editor()
 		UI.Render_Toolbar()
-		if Debug.enabled then Debug.ShowContainers(); end
+		if Debug.enabled then Debug.ShowInfo(); end
 		
 		App.mouse_prev_x, App.mouse_prev_y = App.mouse_x, App.mouse_y
 		reaper.ImGui_End(App.ctx)	

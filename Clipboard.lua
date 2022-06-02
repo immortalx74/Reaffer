@@ -33,7 +33,7 @@ function Clipboard.Paste(cx, cy)
 		diff = v.offset - src_offset
 		dst_offset = cx + diff
 		v.offset = dst_offset
-
+		
 		if v.offset + v.duration > right_bound then
 			return
 		end
@@ -45,11 +45,15 @@ function Clipboard.Paste(cx, cy)
 		end
 	end
 	
+	Util.ClearTable(App.note_list_selected)
+	Util.ClearTable(App.note_list_selected.indices)
+	
 	for i, v in ipairs(temp) do
 		App.note_list[#App.note_list + 1] = Util.CopyNote(v)
+		App.note_list_selected[#App.note_list_selected + 1] = Util.CopyNote(v)
+		App.note_list_selected.indices[#App.note_list_selected.indices + 1] = #App.note_list
 	end
 	
 	UR.PushUndo(e_OpType.Insert, temp)
-	Util.ClearTable(App.note_list_selected)
 	App.attempts_paste = false
 end
