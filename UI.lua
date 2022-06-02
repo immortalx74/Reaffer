@@ -10,7 +10,7 @@ function UI.Render_Notes(draw_list)
 			note_x = App.editor_win_x + 50 + (note.offset * App.note_w) - App.scroll_x
 			note_y = App.editor_win_y + 30 + (note.string_idx * App.note_h) - 5
 			
-			reaper.ImGui_DrawList_AddRectFilled(draw_list, note_x, note_y, note_x + (App.note_w * note.duration) -1, note_y + App.note_h-1, Util.VelocityColor(note.velocity), 6)
+			reaper.ImGui_DrawList_AddRectFilled(draw_list, note_x, note_y, note_x + (App.note_w * note.duration) -1, note_y + App.note_h - 1, Util.VelocityColor(note.velocity), 6)
 			if App.note_display_cur_idx == e_NoteDisplay.Pitch then
 				str = Util.NotePitchToName(note.pitch)
 			elseif App.note_display_cur_idx == e_NoteDisplay.Fret then
@@ -32,8 +32,8 @@ function UI.Render_Notes(draw_list)
 			end
 			reaper.ImGui_DrawList_AddText(draw_list, note_x + 5, note_y - 2, Colors.text, str)
 			
-			if Util.IsNoteSelected(note) then
-				reaper.ImGui_DrawList_AddRect(draw_list, note_x, note_y, note_x + (App.note_w * note.duration) -1, note_y + App.note_h-1, Colors.text, 40, reaper.ImGui_DrawFlags_None(), 1)
+			if Util.IsNoteSelected(i) then
+				reaper.ImGui_DrawList_AddRect(draw_list, note_x, note_y, note_x + (App.note_w * note.duration) - 1, note_y + App.note_h - 1, Colors.text, 40, reaper.ImGui_DrawFlags_None(), 1)
 			end
 		end
 	end
@@ -122,9 +122,29 @@ function UI.Render_TXT_Help()
 	
 	if reaper.ImGui_IsItemHovered(App.ctx) then
 		reaper.ImGui_BeginTooltip(App.ctx)
+		
 		reaper.ImGui_Text(App.ctx,
-		"Help text,\n" ..
-		"Put quick help here...")
+		"Shortcuts:\n" ..
+		"Select tool (S)\n" ..
+		"Move tool (W)\n" ..
+		"Draw tool (D)\n" ..
+		"Erase tool (E)\n" ..
+		"Undo (Ctrl + Z)\n" ..
+		"Redo (Ctrl + Shift + Z)\n" ..
+		"Cut (Ctrl + X)\n" ..
+		"Copy (Ctrl + C)\n" ..
+		"Paste (Ctrl + V)\n\n" ..
+		"Usage:\n" ..
+		"Left Click with the Draw tool to insert a note.\n" ..
+		"Left Click + Drag horizontally to set duration \n" ..
+		"Left Click + Drag vertically to set pitch\n" ..
+		"Right Click + Drag vertically to set velocity\n" ..
+		"Right Click + Shift + Drag to set off-velocity\n" ..
+		"Left Click + Ctrl to select multiple notes\n" ..
+		"The same actions can be performed with the Select tool, when clicking on existing notes.\n" ..
+		"Click + Drag in an empty area with the Select tool to marquee-select notes.\n\n" ..
+		"Click on the Create MIDI button to generate a MIDI item on the selected track, at cursor position (WIP)")
+		
 		reaper.ImGui_EndTooltip(App.ctx)
 	end
 end
@@ -149,6 +169,12 @@ function UI.Render_Toolbar()
 					UR.PopUndo()
 				elseif i == e_Tool.Redo then
 					UR.PopRedo()
+				elseif i == e_Tool.Cut then
+					Clipboard.Cut()
+				elseif i == e_Tool.Copy then
+					Clipboard.Copy()
+				elseif i == e_Tool.Paste then
+					if #Clipboard.note_list > 0 then App.attempts_paste = true; end
 				end
 			end
 			reaper.ImGui_PopStyleColor(App.ctx)
@@ -229,7 +255,7 @@ function UI.Render_Editor()
 		local rect_y1 = App.editor_win_y + App.top_margin - 5
 		local rect_x2 = lane_end_x - 1
 		local rect_y2 = rect_y1 + 11 + (App.num_strings - 1) * App.lane_v_spacing
-
+		
 		-- debug draw editor mouse area
 		-- reaper.ImGui_DrawList_AddRect(draw_list, rect_x1, rect_y1, rect_x2, rect_y2, Colors.red)
 		
@@ -239,9 +265,25 @@ function UI.Render_Editor()
 			
 			if App.mouse_x > rect_x1 and App.mouse_x < rect_x2  and App.mouse_y > rect_y1 and App.mouse_y < rect_y2  then
 				if Util.IsCellEmpty(cell_x, cell_y, true) then
-					local preview_x = App.editor_win_x + App.left_margin + (cell_x * App.note_w) - App.scroll_x
-					local preview_y = App.editor_win_y + App.top_margin + (cell_y * App.note_h) - 5
-					reaper.ImGui_DrawList_AddRectFilled(draw_list, preview_x, preview_y, preview_x + App.note_w - 1, preview_y + App.note_h - 1, Colors.note_preview, 40)
+					if App.attempts_paste then
+						-- reaper.ImGui_DrawList_AddLine(draw_list, preview_x, App.editor_win_y + App.top_margin, preview_x, App.editor_win_y + App.top_margin + ((App.num_strings - 1) * App.lane_v_spacing), Colors.red)
+						local leftmost = Clipboard.note_list[1].offset
+						
+						for i, v in ipairs(Clipboard.note_list) do
+							local cur_x = App.editor_win_x + App.left_margin + ((v.offset + cell_x - leftmost) * App.note_w) - App.scroll_x
+							local cur_y = App.editor_win_y + App.top_margin + (v.string_idx * App.note_h) - 5
+							reaper.ImGui_DrawList_AddRectFilled(draw_list, cur_x, cur_y, cur_x + (v.duration * App.note_w) - 1, cur_y + App.note_h - 1, Colors.note_preview_paste, 40)
+						end
+						reaper.ImGui_BeginTooltip(App.ctx)
+						reaper.ImGui_Text(App.ctx, "Select position to paste. [ESC] to cancel")
+						reaper.ImGui_EndTooltip(App.ctx)
+					else
+						if not (App.begin_marquee) then
+							local preview_x = App.editor_win_x + App.left_margin + (cell_x * App.note_w) - App.scroll_x
+							local preview_y = App.editor_win_y + App.top_margin + (cell_y * App.note_h) - 5
+							reaper.ImGui_DrawList_AddRectFilled(draw_list, preview_x, preview_y, preview_x + App.note_w - 1, preview_y + App.note_h - 1, Colors.note_preview, 40)
+						end
+					end
 				end
 				if reaper.ImGui_IsMouseClicked(App.ctx, 0) then
 					Editor.OnMouseButtonClick(e_MouseButton.Left, cell_x, cell_y)
@@ -268,7 +310,7 @@ function UI.Render_Editor()
 		if reaper.ImGui_IsMouseDragging(App.ctx, 1) then
 			Editor.OnMouseButtonDrag(e_MouseButton.Right)
 		end
-
+		
 		-- Mask rect
 		reaper.ImGui_DrawList_AddRectFilled(draw_list, App.editor_win_x, App.editor_win_y + 2, App.editor_win_x + App.left_margin, App.editor_win_y + 140, Colors.bg)
 		
@@ -279,6 +321,15 @@ function UI.Render_Editor()
 			local space
 			if len == 2 then space = "  " else space = " " end
 			reaper.ImGui_DrawList_AddText(draw_list, App.editor_win_x + 8, App.editor_win_y + 23 + (i * App.lane_v_spacing), Colors.text, str .. space .. "*")
+		end
+		
+		-- Marquee box
+		if App.begin_marquee then
+			App.marquee_box.x2 = App.mouse_x
+			App.marquee_box.y2 = App.mouse_y
+			
+			reaper.ImGui_DrawList_AddRectFilled(draw_list, App.marquee_box.x1, App.marquee_box.y1, App.marquee_box.x2, App.marquee_box.y2, Colors.marquee_box)
+			-- msg(App.marquee_box.x1 .. " , " .. App.marquee_box.y1 .. ", " .. App.marquee_box.x2 .. " , " .. App.marquee_box.y2)
 		end
 		
 		reaper.ImGui_EndChild(App.ctx)

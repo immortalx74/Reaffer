@@ -18,6 +18,8 @@ App =
 	current_pitch = 0,
 	is_new_note = false,
 	last_click_was_inside_editor = false,
+	attempts_paste = false,
+	begin_marquee = false,
 	
 	-- metrics
 	window_w = 800,
@@ -44,6 +46,8 @@ App =
 	
 	-- defaults
 	wheel_delta = 50,
+	scroll_margin = 50,
+	scroll_speed = 0.25,
 	active_tool = e_Tool.Select,
 	num_strings = 6,
 	num_measures = 4,
@@ -84,14 +88,16 @@ App =
 	
 	note_list =
 	{
-		-- {idx = 1, offset = 6, string_idx = 2, pitch = 25, velocity = 127, off_velocity = 80, duration = 1},
+		-- { offset = 6, string_idx = 2, pitch = 25, velocity = 127, off_velocity = 80, duration = 1},
 	},
 	
 	-- table, storing last clicked note object.
-	-- That's different from last selected, as you can "re-click" an already selected note
+	-- That's different from last selected, as you can "re-click" an already selected note.
+	-- Also, stores an 'idx' field
 	last_note_clicked,
 	
-	note_list_selected = {}
+	note_list_selected = { indices = {} },
+	marquee_box = {x1 = 0, y1 = 0, x2 = 0, y2 = 0}
 }
 
 function App.Init()
@@ -111,18 +117,7 @@ function App.Loop()
 		App.mouse_x, App.mouse_y = reaper.ImGui_GetMousePos(App.ctx)
 		App.window_w = reaper.ImGui_GetWindowWidth(App.ctx)
 		
-		-- if reaper.ImGui_GetKeyMods(App.ctx) == reaper.ImGui_KeyModFlags_Ctrl() and reaper.ImGui_IsKeyPressed(App.ctx, reaper.ImGui_Key_Z()) then
-		-- 	UR.PopUndo()
-		-- end
-		-- if reaper.ImGui_GetKeyMods(App.ctx) == reaper.ImGui_KeyModFlags_Ctrl() + reaper.ImGui_KeyModFlags_Shift() and reaper.ImGui_IsKeyPressed(App.ctx, reaper.ImGui_Key_Z()) then
-		-- 	UR.PopRedo()
-		-- end
-		if reaper.ImGui_IsKeyDown(App.ctx, reaper.ImGui_Key_ModCtrl()) and not reaper.ImGui_IsKeyDown(App.ctx, reaper.ImGui_Key_ModShift()) and reaper.ImGui_IsKeyPressed(App.ctx, reaper.ImGui_Key_Z()) then
-			msg("undo")
-		end
-		if reaper.ImGui_IsKeyDown(App.ctx, reaper.ImGui_Key_ModCtrl()) and reaper.ImGui_IsKeyDown(App.ctx, reaper.ImGui_Key_ModShift()) and reaper.ImGui_IsKeyPressed(App.ctx, reaper.ImGui_Key_Z()) then
-			msg("redo")
-		end
+		Input.GetShortcuts()
 
 		UI.Render_CB_Strings()
 		UI.Render_CB_Signature()
@@ -133,6 +128,7 @@ function App.Loop()
 		UI.Render_TXT_Help()
 		UI.Render_Editor()
 		UI.Render_Toolbar()
+		if Debug.enabled then Debug.ShowInfo(); end
 		
 		App.mouse_prev_x, App.mouse_prev_y = App.mouse_x, App.mouse_y
 		reaper.ImGui_End(App.ctx)	
@@ -142,6 +138,5 @@ function App.Loop()
 		reaper.defer(App.Loop)
 	else
 		reaper.ImGui_DestroyContext(App.ctx)
-		-- reaper.ImGui_DetachFont(App.ctx, App.icon_font)
 	end
 end

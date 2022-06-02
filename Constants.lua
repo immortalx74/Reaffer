@@ -37,11 +37,12 @@ e_MouseButton =
 
 e_OpType = 
 {
-	Insert = 1,
-	Delete = 2,
-	ModifyPitchAndDuration = 3,
-	ModifyVelocityAndOffVelocity = 4,
-	Move = 5
+	NoOp = 1,
+	Insert = 2,
+	Delete = 3,
+	ModifyPitchAndDuration = 4,
+	ModifyVelocityAndOffVelocity = 5,
+	Move = 6
 	-- more here...
 }
 
@@ -51,6 +52,8 @@ Colors =
 	bg = 0x0F0F0FFF,
 	active_tool = 0x3D85E0FF,
 	note_preview = 0xFFFFFF88,
+	note_preview_paste = 0xAAAAAA55,
 	red = 0xFF0000FF,
-	text = 0xFFFFFFFF
+	text = 0xFFFFFFFF,
+	marquee_box = 0xFFFFFF44
 }
