@@ -292,6 +292,7 @@ function UI.Render_Editor()
 					Editor.OnMouseButtonClick(e_MouseButton.Right, cell_x, cell_y)
 				end
 			end
+			if reaper.ImGui_IsMouseClicked(App.ctx, 0) then App.last_click_was_inside_editor = true; end -- NOTE putting this here so that marquee box can auto-scroll even when clicking outside the lanes
 		end
 		
 		-- These have prob have to go out of the drawing function
