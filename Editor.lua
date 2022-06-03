@@ -60,6 +60,9 @@ function Editor.OnMouseButtonRelease(mbutton)
 end
 
 function Editor.OnMouseButtonDrag(mbutton)
+	local cx = Util.GetCellX()
+	local cy = Util.GetCellY()
+
 	if App.last_click_was_inside_editor then
 		if App.mouse_x > App.editor_win_x + App.window_w - App.scroll_margin then
 			App.scroll_x = App.scroll_x + ((App.mouse_x - (App.editor_win_x + App.window_w - App.scroll_margin)) * App.scroll_speed)
@@ -70,20 +73,17 @@ function Editor.OnMouseButtonDrag(mbutton)
 			App.scroll_x = App.scroll_x - ((App.editor_win_x + App.left_margin + App.scroll_margin - App.mouse_x) * App.scroll_speed)
 			reaper.ImGui_SetScrollX(App.ctx, App.scroll_x)
 		end
-	end
-	
-	local cx = Util.GetCellX()
-	local cy = Util.GetCellY()
-	
-	if mbutton == e_MouseButton.Left and App.active_tool == e_Tool.Select then
-		if not (App.begin_marquee) and App.last_note_clicked == nil then
-			App.marquee_box.x1 = App.mouse_x
-			App.marquee_box.y1 = App.mouse_y
-			App.begin_marquee = true
-		end
 		
-		if App.begin_marquee then
-			Editor.MarqueeSelectNotes(cx, cy)
+		if mbutton == e_MouseButton.Left and App.active_tool == e_Tool.Select then
+			if not (App.begin_marquee) and App.last_note_clicked == nil then
+				App.marquee_box.x1 = App.mouse_x
+				App.marquee_box.y1 = App.mouse_y
+				App.begin_marquee = true
+			end
+			
+			if App.begin_marquee then
+				Editor.MarqueeSelectNotes(cx, cy)
+			end
 		end
 	end
 	
