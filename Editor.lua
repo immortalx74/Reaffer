@@ -132,7 +132,7 @@ end
 function Editor.SelectNotes(cx, cy)
 	for i, note in ipairs(App.note_list) do
 		if (cx >= note.offset) and (cx < note.offset + note.duration) and (cy == note.string_idx) then
-			if reaper.ImGui_IsKeyDown(App.ctx, reaper.ImGui_Key_ModCtrl()) then
+			if reaper.ImGui_IsKeyDown(App.ctx, reaper.ImGui_Mod_Ctrl()) then
 				if not (Util.IsNoteAtCellSelected(note.offset, note.string_idx)) then
 					App.note_list_selected[#App.note_list_selected + 1] = Util.CopyNote(note)
 					App.note_list_selected.indices[#App.note_list_selected.indices + 1] = i
@@ -271,7 +271,7 @@ function Editor.ModifyVelocityAndOffVelocity(cx, cy, dx, dy)
 		for i, v in ipairs(App.note_list_selected) do
 			local idx = Util.GetNoteIndexAtCell(v.offset, v.string_idx)
 			
-			if reaper.ImGui_IsKeyDown(App.ctx, reaper.ImGui_Key_ModShift()) then
+			if reaper.ImGui_IsKeyDown(App.ctx, reaper.ImGui_Mod_Shift()) then
 				App.note_list[idx].off_velocity = Util.Clamp(v.off_velocity + dy, 0, 127)
 			else
 				App.note_list[idx].velocity = Util.Clamp(v.velocity + dy, 0, 127)
