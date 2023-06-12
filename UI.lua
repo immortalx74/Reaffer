@@ -43,7 +43,7 @@ function UI.Render_CB_Strings()
 	reaper.ImGui_SetNextItemWidth(App.ctx, App.cb_strings_w)
 	
 	if reaper.ImGui_BeginCombo(App.ctx, "Strings##cb_strings", App.num_strings) then
-		for i = 4, 9 do
+		for i = 4, 10 do
 			if reaper.ImGui_Selectable(App.ctx, i, App.num_strings == i) then App.num_strings = i; end
 		end
 		reaper.ImGui_EndCombo(App.ctx)
