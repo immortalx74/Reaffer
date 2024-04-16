@@ -16,6 +16,9 @@
 --
 -- Generated MIDI item is just a test. No reason to develop it further until articulations are implemented.
 
+package.path = reaper.ImGui_GetBuiltinPath() .. '/?.lua'
+require 'imgui' '0.8.7'
+
 function msg(txt)
 	reaper.ShowConsoleMsg(tostring(txt) .. "\n")
 end
